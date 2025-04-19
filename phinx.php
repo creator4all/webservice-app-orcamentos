@@ -15,7 +15,7 @@ return [
         'default_environment' => 'development',
         'development' => [
             'adapter' => 'mysql',
-            'host' => 'localhost',
+            'host' => 'db',
             'name' => 'webservice',
             'user' => 'root',
             'pass' => 'root',
@@ -25,7 +25,7 @@ return [
         ],
         'testing' => [
             'adapter' => 'mysql',
-            'host' => 'localhost',
+            'host' => 'db',
             'name' => 'webservice_test',
             'user' => 'root',
             'pass' => 'root',
