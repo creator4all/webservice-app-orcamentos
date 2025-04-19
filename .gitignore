@@ -1,0 +1,63 @@
+# Composer dependencies
+/vendor/
+composer.phar
+
+# Environment files
+.env
+.env.local
+.env.*.local
+.env.backup
+
+# Configuration files with sensitive information
+/config/credentials.php
+
+# Cache and logs
+/var/cache/*
+/var/logs/*
+/logs/*
+*.log
+
+# Database files
+*.sqlite
+*.sqlite3
+*.db
+
+# User uploaded content
+/public/uploads/*
+/public/images/uploads/*
+
+# IDE and editor files
+.idea/
+.vscode/
+*.sublime-project
+*.sublime-workspace
+*.komodoproject
+.komodotools/
+nbproject/
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# Build files
+/build/
+/dist/
+/node_modules/
+
+# Temporary files
+/tmp/
+*.tmp
+*.bak
+*.swp
+*~.nib
+.*.sw[a-p]
+
+# Testing
+/phpunit.xml
+.phpunit.result.cache
+/coverage/
+
+# Misc
+.sass-cache/
+/bootstrap/compiled.php
+.php_cs.cache
