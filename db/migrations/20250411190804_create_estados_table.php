@@ -18,13 +18,15 @@ final class CreateEstadosTable extends AbstractMigration
      */
     public function change(): void
     {
-        // Create estados (states) table
-        $table = $this->table('estados', ['id' => 'idestados', 'signed' => false]);
-        $table->addColumn('estado', 'string', ['limit' => 45])
-              ->addColumn('regiao', 'string', ['limit' => 45])
-              ->addColumn('created_at', 'datetime', ['default' => 'CURRENT_TIMESTAMP'])
-              ->addColumn('updated_at', 'datetime', ['default' => 'CURRENT_TIMESTAMP', 'update' => 'CURRENT_TIMESTAMP'])
-              ->addIndex(['estado'], ['unique' => true])
-              ->create();
+        if($this->hasTable('estados')){
+            // Create estados (states) table
+            $table = $this->table('estados', ['id' => 'idestados', 'signed' => false]);
+            $table->addColumn('estado', 'string', ['limit' => 45])
+                  ->addColumn('regiao', 'string', ['limit' => 45])
+                  ->addColumn('created_at', 'datetime', ['default' => 'CURRENT_TIMESTAMP'])
+                  ->addColumn('updated_at', 'datetime', ['default' => 'CURRENT_TIMESTAMP', 'update' => 'CURRENT_TIMESTAMP'])
+                  ->addIndex(['estado'], ['unique' => true])
+                  ->create();
+        }
     }
 }

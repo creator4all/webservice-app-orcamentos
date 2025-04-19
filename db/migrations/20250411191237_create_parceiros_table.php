@@ -18,16 +18,18 @@ final class CreateParceirosTable extends AbstractMigration
      */
     public function change(): void
     {
-        // Create parceiros (partners) table
-        $table = $this->table('parceiros', ['id' => 'idparceiros', 'signed' => false]);
-        $table->addColumn('cnpj', 'string', ['limit' => 45])
-              ->addColumn('logomarca', 'string', ['limit' => 45, 'null' => true])
-              ->addColumn('nome_fantasia', 'string', ['limit' => 45])
-              ->addColumn('razao_social', 'string', ['limit' => 45])
-              ->addColumn('status', 'boolean', ['default' => true])
-              ->addColumn('created_at', 'datetime', ['default' => 'CURRENT_TIMESTAMP'])
-              ->addColumn('updated_at', 'datetime', ['default' => 'CURRENT_TIMESTAMP', 'update' => 'CURRENT_TIMESTAMP'])
-              ->addIndex(['cnpj'], ['unique' => true])
-              ->create();
+        if($this->hasTable('parceiros')){
+            // Create parceiros (partners) table
+            $table = $this->table('parceiros', ['id' => 'idparceiros', 'signed' => false]);
+            $table->addColumn('cnpj', 'string', ['limit' => 45])
+                  ->addColumn('logomarca', 'string', ['limit' => 45, 'null' => true])
+                  ->addColumn('nome_fantasia', 'string', ['limit' => 45])
+                  ->addColumn('razao_social', 'string', ['limit' => 45])
+                  ->addColumn('status', 'boolean', ['default' => true])
+                  ->addColumn('created_at', 'datetime', ['default' => 'CURRENT_TIMESTAMP'])
+                  ->addColumn('updated_at', 'datetime', ['default' => 'CURRENT_TIMESTAMP', 'update' => 'CURRENT_TIMESTAMP'])
+                  ->addIndex(['cnpj'], ['unique' => true])
+                  ->create();
+        }
     }
 }
