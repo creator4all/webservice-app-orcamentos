@@ -9,6 +9,7 @@ use App\DAO\UsuarioDAO;
 use App\DAO\ParceiroDAO;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
+use Firebase\JWT\JWT;
 
 class UsuarioController extends Controller {
     public function cadastrar(Request $request, Response $response, $args) {
@@ -86,6 +87,86 @@ class UsuarioController extends Controller {
                 'statusCodeHttp' => 201,
                 'status' => 'sucesso',
                 'mensagem' => 'Usuário cadastrado com sucesso!',
+            ];
+        }, $request, $response, $args);
+    }
+    
+    public function signin(Request $request, Response $response, $args) {
+        return $this->encapsular_response(function($request, $response, $args) {
+            // Obter e sanitizar dados do request
+            $dados = $request->getParsedBody();
+            $dados = is_array($dados) ? $dados : [];
+            $dados = InputSanitizer::sanitizeArray($dados);
+            
+            // Validar campos obrigatórios
+            $camposObrigatorios = ['email', 'password'];
+            $validacao = $this->validar($camposObrigatorios, $dados);
+            
+            if (!$validacao['valido']) {
+                return [
+                    'statusCodeHttp' => 400,
+                    'mensagem' => 'Campos obrigatórios não fornecidos.',
+                    'erros' => $validacao['erros']
+                ];
+            }
+            
+            $usuarioDAO = new UsuarioDAO();
+            $usuario = $usuarioDAO->buscarPorEmail($dados['email']);
+            
+            // Verificar se o usuário existe
+            if (!$usuario) {
+                return [
+                    'statusCodeHttp' => 401,
+                    'mensagem' => 'Credenciais inválidas.'
+                ];
+            }
+            
+            // Verificar se a senha está correta
+            if (!password_verify($dados['password'], $usuario->password)) {
+                return [
+                    'statusCodeHttp' => 401,
+                    'mensagem' => 'Credenciais inválidas.'
+                ];
+            }
+            
+            // Verificar se o usuário está ativo
+            if ($usuario->status != 1) {
+                return [
+                    'statusCodeHttp' => 401,
+                    'mensagem' => 'Usuário inativo. Entre em contato com o administrador.'
+                ];
+            }
+            
+            $settings = $this->container->get('settings');
+            $jwtSettings = $settings['jwt'];
+            
+            $issuedAt = time();
+            $expirationTime = $issuedAt + $jwtSettings['expiration'];
+            
+            $payload = [
+                'iat' => $issuedAt,
+                'exp' => $expirationTime,
+                'sub' => $usuario->idUsuarios,
+                'email' => $usuario->email,
+                'nome' => $usuario->nome,
+                'role_id' => $usuario->role_id,
+                'parceiro_id' => $usuario->parceiros_idparceiros
+            ];
+            
+            $token = JWT::encode($payload, $jwtSettings['secret'], $jwtSettings['algorithm']);
+            
+            // Retornar token e dados do usuário
+            return [
+                'statusCodeHttp' => 200,
+                'status' => 'sucesso',
+                'mensagem' => 'Login realizado com sucesso!',
+                'token' => $token,
+                'usuario' => [
+                    'id' => $usuario->idUsuarios,
+                    'nome' => $usuario->nome,
+                    'email' => $usuario->email,
+                    'role_id' => $usuario->role_id
+                ]
             ];
         }, $request, $response, $args);
     }
