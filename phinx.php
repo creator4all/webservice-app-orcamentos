@@ -16,7 +16,7 @@ return [
         'development' => [
             'adapter' => 'mysql',
             'host' => 'localhost',
-            'name' => 'orcamentos',
+            'name' => 'webservice',
             'user' => 'root',
             'pass' => 'root',
             'port' => '3306',
@@ -26,7 +26,7 @@ return [
         'testing' => [
             'adapter' => 'mysql',
             'host' => 'localhost',
-            'name' => 'orcamentos_test',
+            'name' => 'webservice_test',
             'user' => 'root',
             'pass' => 'root',
             'port' => '3306',
@@ -36,7 +36,7 @@ return [
         'production' => [
             'adapter' => 'mysql',
             'host' => $_ENV['DB_HOST'] ?? 'localhost',
-            'name' => $_ENV['DB_DATABASE'] ?? 'orcamentos',
+            'name' => $_ENV['DB_DATABASE'] ?? 'webservice',
             'user' => $_ENV['DB_USERNAME'] ?? 'root',
             'pass' => $_ENV['DB_PASSWORD'] ?? 'root',
             'port' => $_ENV['DB_PORT'] ?? '3306',
