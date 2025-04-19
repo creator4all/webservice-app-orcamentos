@@ -29,4 +29,21 @@ class UsuarioDAO extends Connection{
         $stmt->bindValue(':role_id', $usuario->role_id);
         return $stmt->execute();
     }
+    
+    public function buscarPorEmailESenha($email, $password) {
+        $sql = "SELECT * FROM usuarios WHERE email = :email AND password = :password AND excluido = 0 AND status = 1 LIMIT 1";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':email', $email);
+        $stmt->bindValue(':password', $password);
+        $stmt->execute();
+        
+        $dados = $stmt->fetch(\PDO::FETCH_ASSOC);
+        
+        if (!$dados) {
+            return null;
+        }
+        
+        $usuario = new UsuarioModel($dados);
+        return $usuario;
+    }
 }

@@ -18,8 +18,9 @@ class Routes
             // Hello World route
             $group->get('/hello', HelloController::class . ':hello');
 
-            // Rota pública de cadastro de usuário
+            // Rotas públicas de usuário
             $group->post('/register/{cnpj}', 'App\Controller\UsuarioController:cadastrar');
+            $group->post('/signin', 'App\Controller\UsuarioController:signin');
             
             // Auth routes
             $group->group('/auth', function (Group $group) {
