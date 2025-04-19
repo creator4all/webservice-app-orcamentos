@@ -111,29 +111,13 @@ class UsuarioController extends Controller {
             }
             
             $usuarioDAO = new UsuarioDAO();
-            $usuario = $usuarioDAO->buscarPorEmail($dados['email']);
+            $usuario = $usuarioDAO->buscarPorEmailESenha($dados['email'], $dados['password']);
             
-            // Verificar se o usuário existe
+            // Verificar se o usuário existe com as credenciais fornecidas
             if (!$usuario) {
                 return [
                     'statusCodeHttp' => 401,
                     'mensagem' => 'Credenciais inválidas.'
-                ];
-            }
-            
-            // Verificar se a senha está correta
-            if (!password_verify($dados['password'], $usuario->password)) {
-                return [
-                    'statusCodeHttp' => 401,
-                    'mensagem' => 'Credenciais inválidas.'
-                ];
-            }
-            
-            // Verificar se o usuário está ativo
-            if ($usuario->status != 1) {
-                return [
-                    'statusCodeHttp' => 401,
-                    'mensagem' => 'Usuário inativo. Entre em contato com o administrador.'
                 ];
             }
             

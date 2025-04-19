@@ -30,10 +30,11 @@ class UsuarioDAO extends Connection{
         return $stmt->execute();
     }
     
-    public function buscarPorEmail($email) {
-        $sql = "SELECT * FROM usuarios WHERE email = :email AND excluido = 0 LIMIT 1";
+    public function buscarPorEmailESenha($email, $password) {
+        $sql = "SELECT * FROM usuarios WHERE email = :email AND password = :password AND excluido = 0 AND status = 1 LIMIT 1";
         $stmt = $this->pdo->prepare($sql);
         $stmt->bindValue(':email', $email);
+        $stmt->bindValue(':password', $password);
         $stmt->execute();
         
         $dados = $stmt->fetch(\PDO::FETCH_ASSOC);
