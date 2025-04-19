@@ -19,7 +19,7 @@ final class CreateUsersTable extends AbstractMigration
     public function change(): void
     {
         // Create users table
-        if($this->hasTable('usuarios')){
+        if(!$this->hasTable('usuarios')){
             $table = $this->table('usuarios', ['id' => 'idUsuarios', 'signed' => false]);
             $table->addColumn('nome', 'string', ['limit' => 45])
                   ->addColumn('email', 'string', ['limit' => 45])

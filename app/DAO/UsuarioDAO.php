@@ -13,7 +13,9 @@ class UsuarioDAO extends Connection{
     }
 
     public function inserir(UsuarioModel $usuario) {
-        $sql = "INSERT INTO usuarios (nome, email, telefone, status, excluido, foto_perfil, created_at, updated_at, parceiros_idparceiros, cargos_idcargos, password, role_id) VALUES (:nome, :email, :telefone, :status, :excluido, :foto_perfil, NOW(), NOW(), :parceiros_idparceiros, :cargos_idcargos, :password, :role_id)";
+        $sql = "INSERT INTO usuarios (nome, email, telefone, status, excluido, foto_perfil, created_at, updated_at, parceiros_idparceiros, cargos_idcargos, password, role_id) 
+        VALUES 
+        (:nome, :email, :telefone, :status, :excluido, :foto_perfil, NOW(), NOW(), :parceiros_idparceiros, :cargos_idcargos, :password, :role_id)";
         $stmt = $this->pdo->prepare($sql);
         $stmt->bindValue(':nome', $usuario->nome);
         $stmt->bindValue(':email', $usuario->email);

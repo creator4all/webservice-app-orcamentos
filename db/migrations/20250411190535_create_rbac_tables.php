@@ -18,7 +18,7 @@ final class CreateRbacTables extends AbstractMigration
      */
     public function change(): void
     {
-        if($this->hasTable('roles')){
+        if(!$this->hasTable('roles')){
             // Create roles table
             $roles = $this->table('roles', ['id' => 'id', 'signed' => false]);
             $roles->addColumn('name', 'string', ['limit' => 50])
@@ -29,7 +29,7 @@ final class CreateRbacTables extends AbstractMigration
                   ->create();
         }
 
-        if($this->hasTable('permissions')){
+        if(!$this->hasTable('permissions')){
             // Create permissions table
             $permissions = $this->table('permissions', ['id' => 'id', 'signed' => false]);
             $permissions->addColumn('name', 'string', ['limit' => 50])
@@ -41,7 +41,7 @@ final class CreateRbacTables extends AbstractMigration
                         ->create();
         }
 
-        if($this->hasTable('role_permissions')){
+        if(!$this->hasTable('role_permissions')){
             // Create role_permissions pivot table
             $rolePermissions = $this->table('role_permissions', ['id' => false, 'primary_key' => ['role_id', 'permission_id']]);
             $rolePermissions->addColumn('role_id', 'integer', ['signed' => false])
@@ -56,7 +56,7 @@ final class CreateRbacTables extends AbstractMigration
             ->update();
         }
 
-        if($this->hasTable('user_permissions')){
+        if(!$this->hasTable('user_permissions')){
             // Create user_permissions pivot table for direct permission assignments
             $userPermissions = $this->table('user_permissions', ['id' => false, 'primary_key' => ['user_id', 'permission_id']]);
             $userPermissions->addColumn('user_id', 'integer', ['signed' => false])

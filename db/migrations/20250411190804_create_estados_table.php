@@ -18,7 +18,7 @@ final class CreateEstadosTable extends AbstractMigration
      */
     public function change(): void
     {
-        if($this->hasTable('estados')){
+        if(!$this->hasTable('estados')){
             // Create estados (states) table
             $table = $this->table('estados', ['id' => 'idestados', 'signed' => false]);
             $table->addColumn('estado', 'string', ['limit' => 45])

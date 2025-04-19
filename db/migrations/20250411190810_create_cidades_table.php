@@ -18,7 +18,7 @@ final class CreateCidadesTable extends AbstractMigration
      */
     public function change(): void
     {
-        if($this->hasTable('cidades')){
+        if(!$this->hasTable('cidades')){
             // Create cidades (cities) table
             $table = $this->table('cidades', ['id' => 'idcidades', 'signed' => false]);
             $table->addColumn('nome', 'string', ['limit' => 45])

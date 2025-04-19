@@ -18,7 +18,7 @@ final class CreateCensoTable extends AbstractMigration
      */
     public function change(): void
     {
-        if($this->hasTable('censo')){
+        if(!$this->hasTable('censo')){
             // Create censo (census) table
             $table = $this->table('censo', ['id' => 'idcenso', 'signed' => false]);
             $table->addColumn('bercario', 'decimal', ['precision' => 10, 'scale' => 2])

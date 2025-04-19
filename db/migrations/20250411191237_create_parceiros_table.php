@@ -18,7 +18,7 @@ final class CreateParceirosTable extends AbstractMigration
      */
     public function change(): void
     {
-        if($this->hasTable('parceiros')){
+        if(!$this->hasTable('parceiros')){
             // Create parceiros (partners) table
             $table = $this->table('parceiros', ['id' => 'idparceiros', 'signed' => false]);
             $table->addColumn('cnpj', 'string', ['limit' => 45])
