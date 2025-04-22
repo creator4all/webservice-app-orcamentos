@@ -46,4 +46,25 @@ class UsuarioDAO extends Connection{
         $usuario = new UsuarioModel($dados);
         return $usuario;
     }
+    
+    /**
+     * Busca um usuário pelo email
+     * @param string $email Email do usuário
+     * @return UsuarioModel|null Usuário encontrado ou null
+     */
+    public function buscarPorEmail($email) {
+        $sql = "SELECT * FROM usuarios WHERE email = :email AND excluido = 0 LIMIT 1";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':email', $email);
+        $stmt->execute();
+        
+        $dados = $stmt->fetch(\PDO::FETCH_ASSOC);
+        
+        if (!$dados) {
+            return null;
+        }
+        
+        $usuario = new UsuarioModel($dados);
+        return $usuario;
+    }
 }
