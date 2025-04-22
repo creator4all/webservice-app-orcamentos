@@ -13,9 +13,9 @@ class UsuarioDAO extends Connection{
     }
 
     public function inserir(UsuarioModel $usuario) {
-        $sql = "INSERT INTO usuarios (nome, email, telefone, status, excluido, foto_perfil, created_at, updated_at, parceiros_idparceiros, cargos_idcargos, password, role_id) 
+        $sql = "INSERT INTO usuarios (nome, email, telefone, status, excluido, foto_perfil, created_at, updated_at, parceiros_idparceiros, cargo, password, role_id) 
         VALUES 
-        (:nome, :email, :telefone, :status, :excluido, :foto_perfil, NOW(), NOW(), :parceiros_idparceiros, :cargos_idcargos, :password, :role_id)";
+        (:nome, :email, :telefone, :status, :excluido, :foto_perfil, NOW(), NOW(), :parceiros_idparceiros, :cargo, :password, :role_id)";
         $stmt = $this->pdo->prepare($sql);
         $stmt->bindValue(':nome', $usuario->nome);
         $stmt->bindValue(':email', $usuario->email);
@@ -24,7 +24,7 @@ class UsuarioDAO extends Connection{
         $stmt->bindValue(':excluido', $usuario->excluido);
         $stmt->bindValue(':foto_perfil', $usuario->foto_perfil);
         $stmt->bindValue(':parceiros_idparceiros', $usuario->parceiros_idparceiros);
-        $stmt->bindValue(':cargos_idcargos', $usuario->cargos_idcargos);
+        $stmt->bindValue(':cargo', $usuario->cargo ?? 'Gestor');
         $stmt->bindValue(':password', $usuario->password);
         $stmt->bindValue(':role_id', $usuario->role_id);
         return $stmt->execute();
