@@ -22,6 +22,8 @@ class Routes
             $group->post('/register/{cnpj}', 'App\Controller\UsuarioController:cadastrar');
             $group->post('/signin', 'App\Controller\UsuarioController:signin');
             
+            $group->post('/parceiros', 'App\Controller\ParceiroController:cadastrar');
+            
             // Auth routes
             $group->group('/auth', function (Group $group) {
                 $group->post('/login', 'App\Controller\AuthController:login');
