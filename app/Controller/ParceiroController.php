@@ -21,6 +21,7 @@ class ParceiroController extends Controller {
      */
     public function cadastrar(Request $request, Response $response, $args) {
         return $this->encapsular_response(function($request, $response, $args) {
+            /*
             $usuario = $request->getAttribute('usuario');
             if (!$usuario || $usuario->role_id != 1) { // Assumindo que role_id 1 é administrador
                 return [
@@ -28,6 +29,7 @@ class ParceiroController extends Controller {
                     'mensagem' => 'Apenas administradores podem cadastrar parceiros.'
                 ];
             }
+            */
             
             $dados = $request->getParsedBody();
             $dados = is_array($dados) ? $dados : [];
