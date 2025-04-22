@@ -30,7 +30,7 @@ return function (App $app) {
         // Hello World route
         $group->get('/hello', HelloController::class . ':hello');
         
-        // Add your other API routes here
+        $group->post('/parceiros', 'App\Controller\ParceiroController:cadastrar');
     });
     
     // Documentation route for Swagger
