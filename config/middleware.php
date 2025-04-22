@@ -33,7 +33,7 @@ return function (App $app) {
     // JWT Authentication middleware
     $app->add(new JwtAuthentication([
         'path' => ['/api'],
-        'ignore' => ['/api/auth/login', '/api/auth/register', '/api/hello', '/api/signin'],
+        'ignore' => ['/api/auth/login', '/api/auth/register', '/api/hello', '/api/signin', '/api/register'],
         'secret' => $_ENV['JWT_SECRET'] ?? 'your_jwt_secret_key',
         'algorithm' => $_ENV['JWT_ALGORITHM'] ?? 'HS256',
         'secure' => false, // Set to true in production
