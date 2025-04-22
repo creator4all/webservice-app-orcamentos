@@ -10,7 +10,7 @@ use App\DAO\UsuarioDAO;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
 
-class ParceiroController extends Controller {
+class ParceiroController extends \App\Controller\Controller {
     /**
      * Cadastra um novo parceiro e seu usuário gestor
      * Apenas administradores podem cadastrar parceiros
