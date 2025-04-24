@@ -5,6 +5,7 @@ use App\Model\UsuarioModel;
 use App\Utils\InputSanitizer;
 use App\Utils\CNPJValidator;
 use App\Utils\ParceiroValidator;
+use App\Utils\Validator;
 use App\DAO\UsuarioDAO;
 use App\DAO\ParceiroDAO;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -97,10 +98,8 @@ class UsuarioController extends Controller {
             $dados = $request->getParsedBody();
             $dados = is_array($dados) ? $dados : [];
             $dados = InputSanitizer::sanitizeArray($dados);
-            
-            // Validar campos obrigatórios
-            $camposObrigatorios = ['email', 'password'];
-            $validacao = $this->validar($camposObrigatorios, $dados);
+
+            $validacao = Validator::validate($dados, ['email', 'password']);
             
             if (!$validacao['valido']) {
                 return [
@@ -112,7 +111,6 @@ class UsuarioController extends Controller {
             
             $usuarioDAO = new UsuarioDAO();
             $usuario = $usuarioDAO->buscarPorEmailESenha($dados['email'], $dados['password']);
-            
             // Verificar se o usuário existe com as credenciais fornecidas
             if (!$usuario) {
                 return [

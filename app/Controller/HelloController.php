@@ -19,9 +19,7 @@ final class HelloController extends Controller
         return $this->encapsular_response(function (Request $request, Response $response, array $args) {
             return [
                 'status' => 'success',
-                'data' => [
-                    'message' => 'Hello World'
-                ]
+                'message' => 'Hello World'
             ];
         }, $request, $response, $args);
     }
