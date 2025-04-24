@@ -30,7 +30,7 @@ final class CreateUsersTable extends AbstractMigration
                   ->addColumn('created_at', 'datetime', ['default' => 'CURRENT_TIMESTAMP'])
                   ->addColumn('updated_at', 'datetime', ['default' => 'CURRENT_TIMESTAMP', 'update' => 'CURRENT_TIMESTAMP'])
                   ->addColumn('parceiros_idparceiros', 'integer', ['null' => true, 'signed' => false])
-                  ->addColumn('cargo', 'string', ['null' => false, 'limit' => 45])
+                  ->addColumn('cargo', 'string', ['null' => false, 'limit' => 45, 'default' => 'Vendedor'])
                   ->addColumn('password', 'string', ['limit' => 255])
                   ->addColumn('remember_token', 'string', ['limit' => 100, 'null' => true])
                   ->addColumn('role_id', 'integer', ['signed' => false, 'null' => true])

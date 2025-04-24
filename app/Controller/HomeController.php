@@ -10,7 +10,7 @@ use Psr\Container\ContainerInterface;
 final class HomeController extends Controller
 {
     
-    public function index(Request $request, Response $response): Response
+    public function index(Request $request, Response $response, array $args): Response
     {
         return $this->encapsular_response(function (Request $request, Response $response, array $args) {
             $data = [

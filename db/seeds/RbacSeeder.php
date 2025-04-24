@@ -137,6 +137,7 @@ class RbacSeeder extends AbstractSeed
                 'created_at' => date('Y-m-d H:i:s'),
                 'password' => password_hash('admin123', PASSWORD_DEFAULT),
                 'role_id' => $adminRole['id'],
+                'cargo' => 'Administrador',
             ],
         ];
         
