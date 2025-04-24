@@ -34,8 +34,8 @@ $middleware = require __DIR__ . '/config/middleware.php';
 $middleware($app);
 
 // Register routes
-$routes = require __DIR__ . '/config/routes.php';
-$routes($app);
+require_once __DIR__ . '/app/Routes.php';
+\App\Routes::attachRoutes($app);
 
 // Add Routing Middleware
 $app->addRoutingMiddleware();
