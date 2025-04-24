@@ -18,9 +18,8 @@ class UsuariosSeeder extends AbstractSeed
         $gerenteRole = $this->fetchRow('SELECT id FROM roles WHERE name = "Gerente"');
         $usuarioRole = $this->fetchRow('SELECT id FROM roles WHERE name = "Usuário"');
 
-        $prefix = "orcamentos_";
         $plainPassword = "teste123";
-        $testPasswordHash = password_hash($prefix . $plainPassword, PASSWORD_DEFAULT);
+        $testPasswordHash = password_hash($plainPassword, PASSWORD_DEFAULT);
         
         $timestamp = date('Y-m-d H:i:s');
 
