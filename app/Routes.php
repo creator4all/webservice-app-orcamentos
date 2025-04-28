@@ -21,6 +21,13 @@ class Routes
             // Rotas públicas de usuário
             $group->post('/register/{cnpj}', 'App\Controller\UsuarioController:cadastrar');
             $group->post('/signin', 'App\Controller\UsuarioController:signin');
+            $group->put('/profile', 'App\Controller\UsuarioController:editarPerfil');
+            
+            $group->group('/parceiros', function (Group $group) {
+                $group->get('', 'App\Controller\ParceiroController:listar');
+                $group->post('', 'App\Controller\ParceiroController:cadastrar');
+                $group->put('/{id}', 'App\Controller\ParceiroController:editar');
+            });
             
             // Auth routes
             $group->group('/auth', function (Group $group) {
