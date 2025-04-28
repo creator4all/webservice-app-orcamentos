@@ -88,19 +88,19 @@ class UsuarioDAO extends Connection{
     }
     
     /**
-     * Busca gestores com paginação
+     * Busca gestores e vendedores com paginação
      * @param int $parceiroId ID do parceiro (opcional)
      * @param bool $incluirEmpresa Se deve incluir informações da empresa
      * @param int $pagina Número da página
      * @param int $porPagina Itens por página
-     * @return array Array com os gestores e informações de paginação
+     * @return array Array com os usuários e informações de paginação
      */
-    public function buscarGestores($parceiroId = null, $incluirEmpresa = false, $pagina = 1, $porPagina = 10) {
+    public function buscarGestoresEVendedores($parceiroId = null, $incluirEmpresa = false, $pagina = 1, $porPagina = 10) {
         $offset = ($pagina - 1) * $porPagina;
         
         $sqlSelect = "SELECT u.* ";
         $sqlFrom = " FROM usuarios u ";
-        $sqlWhere = " WHERE u.excluido = 0 AND u.role_id = 2 "; // role_id 2 = Gerente
+        $sqlWhere = " WHERE u.excluido = 0 AND (u.role_id = 2 OR u.role_id = 3) "; // role_id 2 = Gerente, 3 = Vendedor
         $sqlParams = [];
         
         if ($parceiroId !== null) {
@@ -130,12 +130,12 @@ class UsuarioDAO extends Connection{
         $stmt->bindValue(':limit', $porPagina, \PDO::PARAM_INT);
         $stmt->execute();
         
-        $gestores = [];
+        $usuarios = [];
         while ($dados = $stmt->fetch(\PDO::FETCH_ASSOC)) {
-            $gestor = new UsuarioModel($dados);
+            $usuario = new UsuarioModel($dados);
             
             if ($incluirEmpresa && isset($dados['nome_fantasia'])) {
-                $gestor->empresa = [
+                $usuario->empresa = [
                     'nome_fantasia' => $dados['nome_fantasia'],
                     'razao_social' => $dados['razao_social'],
                     'cnpj' => $dados['cnpj'],
@@ -144,13 +144,13 @@ class UsuarioDAO extends Connection{
                 ];
             }
             
-            $gestores[] = $gestor;
+            $usuarios[] = $usuario;
         }
         
         $totalPaginas = ceil($totalRegistros / $porPagina);
         
         return [
-            'gestores' => $gestores,
+            'usuarios' => $usuarios,
             'paginacao' => [
                 'total' => $totalRegistros,
                 'por_pagina' => $porPagina,
@@ -161,19 +161,19 @@ class UsuarioDAO extends Connection{
     }
     
     /**
-     * Busca vendedores e gestores de um parceiro com paginação
+     * Busca apenas vendedores de um parceiro com paginação
      * @param int $parceiroId ID do parceiro
      * @param int $pagina Número da página
      * @param int $porPagina Itens por página
      * @return array Array com os usuários e informações de paginação
      */
-    public function buscarVendedoresEGestores($parceiroId, $pagina = 1, $porPagina = 10) {
+    public function buscarVendedores($parceiroId, $pagina = 1, $porPagina = 10) {
         $offset = ($pagina - 1) * $porPagina;
         
         $sqlCount = "SELECT COUNT(*) as total FROM usuarios 
                      WHERE excluido = 0 
                      AND parceiros_idparceiros = :parceiro_id 
-                     AND (role_id = 2 OR role_id = 3)"; // role_id 2 = Gerente, 3 = Vendedor
+                     AND role_id = 3"; // role_id 3 = Vendedor
         
         $stmtCount = $this->pdo->prepare($sqlCount);
         $stmtCount->bindValue(':parceiro_id', $parceiroId);
@@ -183,7 +183,7 @@ class UsuarioDAO extends Connection{
         $sql = "SELECT * FROM usuarios 
                 WHERE excluido = 0 
                 AND parceiros_idparceiros = :parceiro_id 
-                AND (role_id = 2 OR role_id = 3)
+                AND role_id = 3
                 ORDER BY nome LIMIT :offset, :limit";
         
         $stmt = $this->pdo->prepare($sql);

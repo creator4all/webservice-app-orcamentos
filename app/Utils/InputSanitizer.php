@@ -76,4 +76,14 @@ class InputSanitizer {
         
         return $erros;
     }
+    
+    /**
+     * Valida se uma URL está em formato válido
+     */
+    public static function validateUrl($url) {
+        if (empty($url)) {
+            return true; // URL é opcional
+        }
+        return filter_var($url, FILTER_VALIDATE_URL) !== false;
+    }
 }

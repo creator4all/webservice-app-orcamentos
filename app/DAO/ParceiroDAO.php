@@ -53,4 +53,50 @@ class ParceiroDAO extends Connection {
         
         return false;
     }
+    
+    /**
+     * Atualiza um parceiro existente
+     * @param ParceiroModel $parceiro Parceiro a ser atualizado
+     * @return bool Sucesso ou falha da operação
+     */
+    public function atualizar(ParceiroModel $parceiro) {
+        $sql = "UPDATE parceiros SET 
+                nome_fantasia = :nome_fantasia, 
+                razao_social = :razao_social, 
+                logomarca = :logomarca, 
+                url = :url,
+                updated_by = :updated_by,
+                updated_at = NOW()
+                WHERE idparceiros = :id";
+                
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':nome_fantasia', $parceiro->nome_fantasia);
+        $stmt->bindValue(':razao_social', $parceiro->razao_social);
+        $stmt->bindValue(':logomarca', $parceiro->logomarca);
+        $stmt->bindValue(':url', $parceiro->url);
+        $stmt->bindValue(':updated_by', $parceiro->updated_by);
+        $stmt->bindValue(':id', $parceiro->idparceiros);
+        
+        return $stmt->execute();
+    }
+    
+    /**
+     * Busca um parceiro pelo ID
+     * @param int $id ID do parceiro
+     * @return ParceiroModel|null Retorna o parceiro encontrado ou null se não encontrar
+     */
+    public function buscarPorId($id) {
+        $sql = "SELECT * FROM parceiros WHERE idparceiros = :id LIMIT 1";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':id', $id);
+        $stmt->execute();
+        
+        $resultado = $stmt->fetch(\PDO::FETCH_ASSOC);
+        
+        if (!$resultado) {
+            return null;
+        }
+        
+        return new ParceiroModel($resultado);
+    }
 }

@@ -109,7 +109,7 @@ class UsuarioController extends Controller {
     }
     
     /**
-     * Lista gestores de acordo com as permissões do usuário autenticado
+     * Lista gestores e vendedores de acordo com as permissões do usuário autenticado
      * @param Request $request
      * @param Response $response
      * @param array $args
@@ -122,7 +122,7 @@ class UsuarioController extends Controller {
             if (!$usuario || ($usuario->role_id != 1 && $usuario->role_id != 2)) { // Admin (1) ou Gestor (2)
                 return [
                     'statusCodeHttp' => 403,
-                    'mensagem' => 'Apenas administradores e gestores podem listar gestores.'
+                    'mensagem' => 'Apenas administradores e gestores podem listar gestores e vendedores.'
                 ];
             }
             
@@ -138,32 +138,33 @@ class UsuarioController extends Controller {
             $resultado = [];
             
             // Comportamento diferente baseado no papel do usuário
-            if ($usuario->role_id == 1) { // Administrador
-                $resultado = $usuarioDAO->buscarGestores(null, true, $pagina, $porPagina);
+            if ($usuario->role_id == 1) { // Administrador - lista gestores e vendedores com informações da empresa
+                $resultado = $usuarioDAO->buscarGestoresEVendedores(null, true, $pagina, $porPagina);
                 
-                $gestoresFormatados = [];
-                foreach ($resultado['gestores'] as $gestor) {
-                    $gestorFormatado = [
-                        'id' => $gestor->idUsuarios,
-                        'nome' => $gestor->nome,
-                        'email' => $gestor->email,
-                        'telefone' => $gestor->telefone,
-                        'cargo' => $gestor->cargo,
-                        'status' => $gestor->status,
-                        'empresa' => isset($gestor->empresa) ? $gestor->empresa : null
+                $usuariosFormatados = [];
+                foreach ($resultado['usuarios'] as $usr) {
+                    $usuarioFormatado = [
+                        'id' => $usr->idUsuarios,
+                        'nome' => $usr->nome,
+                        'email' => $usr->email,
+                        'telefone' => $usr->telefone,
+                        'cargo' => $usr->cargo,
+                        'status' => $usr->status,
+                        'role_id' => $usr->role_id,
+                        'empresa' => isset($usr->empresa) ? $usr->empresa : null
                     ];
-                    $gestoresFormatados[] = $gestorFormatado;
+                    $usuariosFormatados[] = $usuarioFormatado;
                 }
                 
                 return [
                     'statusCodeHttp' => 200,
                     'status' => 'sucesso',
-                    'gestores' => $gestoresFormatados,
+                    'usuarios' => $usuariosFormatados,
                     'paginacao' => $resultado['paginacao']
                 ];
                 
-            } else { // Gestor
-                $resultado = $usuarioDAO->buscarVendedoresEGestores($usuario->parceiro_id, $pagina, $porPagina);
+            } else { // Gestor - lista apenas vendedores da sua empresa
+                $resultado = $usuarioDAO->buscarVendedores($usuario->parceiro_id, $pagina, $porPagina);
                 
                 $usuariosFormatados = [];
                 foreach ($resultado['usuarios'] as $usr) {
