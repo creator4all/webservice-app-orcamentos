@@ -108,6 +108,88 @@ class UsuarioController extends Controller {
         }, $request, $response, $args);
     }
     
+    /**
+     * Lista gestores e vendedores de acordo com as permissões do usuário autenticado
+     * @param Request $request
+     * @param Response $response
+     * @param array $args
+     * @return Response
+     */
+    public function listarGestores(Request $request, Response $response, $args) {
+        return $this->encapsular_response(function($request, $response, $args) {
+            // Verificar autenticação e permissão
+            $usuario = $request->getAttribute('usuario');
+            if (!$usuario || ($usuario->role_id != 1 && $usuario->role_id != 2)) { // Admin (1) ou Gestor (2)
+                return [
+                    'statusCodeHttp' => 403,
+                    'mensagem' => 'Apenas administradores e gestores podem listar gestores e vendedores.'
+                ];
+            }
+            
+            $queryParams = $request->getQueryParams();
+            $pagina = isset($queryParams['pagina']) ? (int)$queryParams['pagina'] : 1;
+            $porPagina = isset($queryParams['por_pagina']) ? (int)$queryParams['por_pagina'] : 10;
+            
+            // Validar parâmetros de paginação
+            if ($pagina < 1) $pagina = 1;
+            if ($porPagina < 1 || $porPagina > 100) $porPagina = 10;
+            
+            $usuarioDAO = new UsuarioDAO();
+            $resultado = [];
+            
+            // Comportamento diferente baseado no papel do usuário
+            if ($usuario->role_id == 1) { // Administrador - lista gestores e vendedores com informações da empresa
+                $resultado = $usuarioDAO->buscarGestoresEVendedores(null, true, $pagina, $porPagina);
+                
+                $usuariosFormatados = [];
+                foreach ($resultado['usuarios'] as $usr) {
+                    $usuarioFormatado = [
+                        'id' => $usr->idUsuarios,
+                        'nome' => $usr->nome,
+                        'email' => $usr->email,
+                        'telefone' => $usr->telefone,
+                        'cargo' => $usr->cargo,
+                        'status' => $usr->status,
+                        'role_id' => $usr->role_id,
+                        'empresa' => isset($usr->empresa) ? $usr->empresa : null
+                    ];
+                    $usuariosFormatados[] = $usuarioFormatado;
+                }
+                
+                return [
+                    'statusCodeHttp' => 200,
+                    'status' => 'sucesso',
+                    'usuarios' => $usuariosFormatados,
+                    'paginacao' => $resultado['paginacao']
+                ];
+                
+            } else { // Gestor - lista apenas vendedores da sua empresa
+                $resultado = $usuarioDAO->buscarVendedores($usuario->parceiro_id, $pagina, $porPagina);
+                
+                $usuariosFormatados = [];
+                foreach ($resultado['usuarios'] as $usr) {
+                    $usuarioFormatado = [
+                        'id' => $usr->idUsuarios,
+                        'nome' => $usr->nome,
+                        'email' => $usr->email,
+                        'telefone' => $usr->telefone,
+                        'cargo' => $usr->cargo,
+                        'status' => $usr->status,
+                        'role_id' => $usr->role_id
+                    ];
+                    $usuariosFormatados[] = $usuarioFormatado;
+                }
+                
+                return [
+                    'statusCodeHttp' => 200,
+                    'status' => 'sucesso',
+                    'usuarios' => $usuariosFormatados,
+                    'paginacao' => $resultado['paginacao']
+                ];
+            }
+        }, $request, $response, $args);
+    }
+    
     public function cadastrar(Request $request, Response $response, $args) {
         return $this->encapsular_response(function($request, $response, $args) {
             // Verificar se o CNPJ foi fornecido

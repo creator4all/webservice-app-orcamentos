@@ -21,7 +21,6 @@ class Routes
             // Rotas públicas de usuário
             $group->post('/register/{cnpj}', 'App\Controller\UsuarioController:cadastrar');
             $group->post('/signin', 'App\Controller\UsuarioController:signin');
-            $group->put('/profile', 'App\Controller\UsuarioController:editarPerfil');
             
             $group->group('/parceiros', function (Group $group) {
                 $group->get('', 'App\Controller\ParceiroController:listar');
@@ -42,6 +41,7 @@ class Routes
                 $group->post('', 'App\Controller\UserController:create');
                 $group->put('/{id}', 'App\Controller\UserController:update');
                 $group->delete('/{id}', 'App\Controller\UserController:delete');
+                $group->get('/gestores', 'App\Controller\UsuarioController:listarGestores');
             });
             
             // Protected user routes
