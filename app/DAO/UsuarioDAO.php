@@ -47,4 +47,43 @@ class UsuarioDAO extends Connection{
         $usuario = new UsuarioModel($dados);
         return $usuario;
     }
+    
+    public function atualizar(UsuarioModel $usuario) {
+        $sql = "UPDATE usuarios SET 
+                nome = :nome, 
+                email = :email, 
+                telefone = :telefone, 
+                foto_perfil = :foto_perfil, 
+                data_nascimento = :data_nascimento, 
+                cargo = :cargo,
+                updated_at = NOW()
+                WHERE idUsuarios = :id AND excluido = 0";
+                
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':nome', $usuario->nome);
+        $stmt->bindValue(':email', $usuario->email);
+        $stmt->bindValue(':telefone', $usuario->telefone);
+        $stmt->bindValue(':foto_perfil', $usuario->foto_perfil);
+        $stmt->bindValue(':data_nascimento', $usuario->data_nascimento);
+        $stmt->bindValue(':cargo', $usuario->cargo);
+        $stmt->bindValue(':id', $usuario->idUsuarios);
+        
+        return $stmt->execute();
+    }
+    
+    public function buscarPorId($id) {
+        $sql = "SELECT * FROM usuarios WHERE idUsuarios = :id AND excluido = 0 LIMIT 1";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':id', $id);
+        $stmt->execute();
+        
+        $dados = $stmt->fetch(\PDO::FETCH_ASSOC);
+        
+        if (!$dados) {
+            return null;
+        }
+        
+        $usuario = new UsuarioModel($dados);
+        return $usuario;
+    }
 }

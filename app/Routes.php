@@ -36,6 +36,9 @@ class Routes
                 $group->put('/{id}', 'App\Controller\UserController:update');
                 $group->delete('/{id}', 'App\Controller\UserController:delete');
             });
+            
+            // Protected user routes
+            $group->put('/profile', 'App\Controller\UsuarioController:editarPerfil');
         });
         
         // Documentation route for Swagger
