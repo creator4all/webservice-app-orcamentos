@@ -21,7 +21,6 @@ class Routes
             // Rotas públicas de usuário
             $group->post('/register/{cnpj}', 'App\Controller\UsuarioController:cadastrar');
             $group->post('/signin', 'App\Controller\UsuarioController:signin');
-            $group->put('/profile', 'App\Controller\UsuarioController:editarPerfil');
             
             // Auth routes
             $group->group('/auth', function (Group $group) {
@@ -37,6 +36,9 @@ class Routes
                 $group->put('/{id}', 'App\Controller\UserController:update');
                 $group->delete('/{id}', 'App\Controller\UserController:delete');
             });
+            
+            // Protected user routes
+            $group->put('/profile', 'App\Controller\UsuarioController:editarPerfil');
         });
         
         // Documentation route for Swagger
