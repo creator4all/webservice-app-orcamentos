@@ -9,6 +9,7 @@ class UsuarioModel {
     public $status;
     public $excluido;
     public $foto_perfil;
+    public $data_nascimento;
     public $created_at;
     public $updated_at;
     public $parceiros_idparceiros;
