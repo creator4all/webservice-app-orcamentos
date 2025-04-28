@@ -8,6 +8,8 @@ class ParceiroModel {
     public $nome_fantasia;
     public $razao_social;
     public $status;
+    public $url;
+    public $updated_by;
     public $created_at;
     public $updated_at;
 
