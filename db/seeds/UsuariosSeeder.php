@@ -18,6 +18,10 @@ class UsuariosSeeder extends AbstractSeed
         $gerenteRole = $this->fetchRow('SELECT id FROM roles WHERE name = "Gerente"');
         $usuarioRole = $this->fetchRow('SELECT id FROM roles WHERE name = "Usuário"');
 
+        $parceiro1 = $this->fetchRow('SELECT idparceiros FROM parceiros WHERE cnpj = "12345678000190"');
+        $parceiro2 = $this->fetchRow('SELECT idparceiros FROM parceiros WHERE cnpj = "98765432000110"');
+        $parceiro3 = $this->fetchRow('SELECT idparceiros FROM parceiros WHERE cnpj = "45678912000134"');
+
         $plainPassword = "teste123";
         $testPasswordHash = password_hash($plainPassword, PASSWORD_DEFAULT);
         
@@ -33,7 +37,7 @@ class UsuariosSeeder extends AbstractSeed
                 'foto_perfil' => null,
                 'created_at' => $timestamp,
                 'updated_at' => $timestamp,
-                'parceiros_idparceiros' => null,
+                'parceiros_idparceiros' => $parceiro1['idparceiros'],
                 'cargo' => 'Gerente de Projetos',
                 'password' => $testPasswordHash,
                 'remember_token' => null,
@@ -48,7 +52,7 @@ class UsuariosSeeder extends AbstractSeed
                 'foto_perfil' => null,
                 'created_at' => $timestamp,
                 'updated_at' => $timestamp,
-                'parceiros_idparceiros' => null,
+                'parceiros_idparceiros' => $parceiro1['idparceiros'],
                 'cargo' => 'Analista',
                 'password' => $testPasswordHash,
                 'remember_token' => null,
@@ -63,7 +67,7 @@ class UsuariosSeeder extends AbstractSeed
                 'foto_perfil' => null,
                 'created_at' => $timestamp,
                 'updated_at' => $timestamp,
-                'parceiros_idparceiros' => null,
+                'parceiros_idparceiros' => $parceiro2['idparceiros'],
                 'cargo' => 'Desenvolvedor',
                 'password' => $testPasswordHash,
                 'remember_token' => null,
@@ -78,7 +82,7 @@ class UsuariosSeeder extends AbstractSeed
                 'foto_perfil' => null,
                 'created_at' => $timestamp,
                 'updated_at' => $timestamp,
-                'parceiros_idparceiros' => null,
+                'parceiros_idparceiros' => $parceiro2['idparceiros'],
                 'cargo' => 'Analista',
                 'password' => $testPasswordHash,
                 'remember_token' => null,
@@ -93,7 +97,7 @@ class UsuariosSeeder extends AbstractSeed
                 'foto_perfil' => null,
                 'created_at' => $timestamp,
                 'updated_at' => $timestamp,
-                'parceiros_idparceiros' => null,
+                'parceiros_idparceiros' => $parceiro3['idparceiros'],
                 'cargo' => 'Administrador de Sistema',
                 'password' => $testPasswordHash,
                 'remember_token' => null,
@@ -105,12 +109,13 @@ class UsuariosSeeder extends AbstractSeed
     }
     
     /**
-     * Specify that RbacSeeder must run before this seed
+     * Specify that RbacSeeder and ParceiroSeeder must run before this seed
      */
     public function getDependencies()
     {
         return [
-            'RbacSeeder'
+            'RbacSeeder',
+            'ParceiroSeeder'
         ];
     }
 }
