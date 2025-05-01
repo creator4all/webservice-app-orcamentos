@@ -37,11 +37,11 @@ class Routes
             // User routes
             $group->group('/users', function (Group $group) {
                 $group->get('', 'App\Controller\UserController:index');
+                $group->get('/gestores', 'App\Controller\UserController:listManagers');
                 $group->get('/{id}', 'App\Controller\UserController:show');
                 $group->post('', 'App\Controller\UserController:create');
                 $group->put('/{id}', 'App\Controller\UserController:update');
                 $group->delete('/{id}', 'App\Controller\UserController:delete');
-                $group->get('/gestores', 'App\Controller\UserController:listManagers');
             });
             
             // Protected user routes
