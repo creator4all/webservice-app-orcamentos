@@ -12,11 +12,11 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
 use Firebase\JWT\JWT;
 
-class UsuarioController extends Controller {
-    public function editarPerfil(Request $request, Response $response, $args) {
+class UserController extends Controller {
+    public function editProfile(Request $request, Response $response, $args) {
         return $this->encapsular_response(function($request, $response, $args) {
-            $usuarioAutenticado = $request->getAttribute('usuario');
-            if (!$usuarioAutenticado) {
+            $authenticatedUser = $request->getAttribute('usuario');
+            if (!$authenticatedUser) {
                 return [
                     'statusCodeHttp' => 401,
                     'mensagem' => 'Usuário não autenticado.'
@@ -24,67 +24,67 @@ class UsuarioController extends Controller {
             }
             
             // Obtém e sanitiza dados do request
-            $dados = $request->getParsedBody();
-            $dados = is_array($dados) ? $dados : [];
-            $dados = InputSanitizer::sanitizeArray($dados);
+            $data = $request->getParsedBody();
+            $data = is_array($data) ? $data : [];
+            $data = InputSanitizer::sanitizeArray($data);
             
-            $camposPermitidos = ['nome', 'email', 'telefone', 'foto_perfil', 'data_nascimento', 'cargo'];
-            $dadosAtualizacao = [];
+            $allowedFields = ['nome', 'email', 'telefone', 'foto_perfil', 'data_nascimento', 'cargo'];
+            $updateData = [];
             
-            foreach ($camposPermitidos as $campo) {
-                if (isset($dados[$campo])) {
-                    $dadosAtualizacao[$campo] = $dados[$campo];
+            foreach ($allowedFields as $field) {
+                if (isset($data[$field])) {
+                    $updateData[$field] = $data[$field];
                 }
             }
             
-            if (empty($dadosAtualizacao)) {
+            if (empty($updateData)) {
                 return [
                     'statusCodeHttp' => 400,
                     'mensagem' => 'Nenhum campo válido para atualização foi fornecido.'
                 ];
             }
             
-            $erros = [];
+            $errors = [];
             
-            if (isset($dadosAtualizacao['email']) && !InputSanitizer::validateEmail($dadosAtualizacao['email'])) {
-                $erros['email'] = 'E-mail em formato inválido.';
+            if (isset($updateData['email']) && !InputSanitizer::validateEmail($updateData['email'])) {
+                $errors['email'] = 'E-mail em formato inválido.';
             }
             
-            if (isset($dadosAtualizacao['data_nascimento'])) {
-                $dataFormatada = date('Y-m-d', strtotime($dadosAtualizacao['data_nascimento']));
-                if ($dataFormatada === false) {
-                    $erros['data_nascimento'] = 'Data de nascimento em formato inválido.';
+            if (isset($updateData['data_nascimento'])) {
+                $formattedDate = date('Y-m-d', strtotime($updateData['data_nascimento']));
+                if ($formattedDate === false) {
+                    $errors['data_nascimento'] = 'Data de nascimento em formato inválido.';
                 } else {
-                    $dadosAtualizacao['data_nascimento'] = $dataFormatada;
+                    $updateData['data_nascimento'] = $formattedDate;
                 }
             }
             
-            if (!empty($erros)) {
+            if (!empty($errors)) {
                 return [
                     'statusCodeHttp' => 400,
                     'mensagem' => 'Falha na validação dos campos.',
-                    'erros' => $erros
+                    'erros' => $errors
                 ];
             }
             
-            $usuarioDAO = new UsuarioDAO();
-            $usuario = $usuarioDAO->buscarPorId($usuarioAutenticado->sub);
+            $userDAO = new UsuarioDAO();
+            $user = $userDAO->buscarPorId($authenticatedUser->sub);
             
-            if (!$usuario) {
+            if (!$user) {
                 return [
                     'statusCodeHttp' => 404,
                     'mensagem' => 'Usuário não encontrado.'
                 ];
             }
             
-            foreach ($dadosAtualizacao as $campo => $valor) {
-                $usuario->$campo = $valor;
+            foreach ($updateData as $field => $value) {
+                $user->$field = $value;
             }
             
             // Atualiza o usuário no banco
-            $resultado = $usuarioDAO->atualizar($usuario);
+            $result = $userDAO->atualizar($user);
             
-            if (!$resultado) {
+            if (!$result) {
                 return [
                     'statusCodeHttp' => 500,
                     'mensagem' => 'Erro ao atualizar perfil do usuário.'
@@ -96,13 +96,13 @@ class UsuarioController extends Controller {
                 'status' => 'sucesso',
                 'mensagem' => 'Perfil atualizado com sucesso.',
                 'usuario' => [
-                    'id' => $usuario->idUsuarios,
-                    'nome' => $usuario->nome,
-                    'email' => $usuario->email,
-                    'telefone' => $usuario->telefone,
-                    'foto_perfil' => $usuario->foto_perfil,
-                    'data_nascimento' => $usuario->data_nascimento,
-                    'cargo' => $usuario->cargo
+                    'id' => $user->idUsuarios,
+                    'nome' => $user->nome,
+                    'email' => $user->email,
+                    'telefone' => $user->telefone,
+                    'foto_perfil' => $user->foto_perfil,
+                    'data_nascimento' => $user->data_nascimento,
+                    'cargo' => $user->cargo
                 ]
             ];
         }, $request, $response, $args);
@@ -115,11 +115,11 @@ class UsuarioController extends Controller {
      * @param array $args
      * @return Response
      */
-    public function listarGestores(Request $request, Response $response, $args) {
+    public function listManagers(Request $request, Response $response, $args) {
         return $this->encapsular_response(function($request, $response, $args) {
             // Verificar autenticação e permissão
-            $usuario = $request->getAttribute('usuario');
-            if (!$usuario || ($usuario->role_id != 1 && $usuario->role_id != 2)) { // Admin (1) ou Gestor (2)
+            $user = $request->getAttribute('usuario');
+            if (!$user || ($user->role_id != 1 && $user->role_id != 2)) { // Admin (1) ou Gestor (2)
                 return [
                     'statusCodeHttp' => 403,
                     'mensagem' => 'Apenas administradores e gestores podem listar gestores e vendedores.'
@@ -127,23 +127,23 @@ class UsuarioController extends Controller {
             }
             
             $queryParams = $request->getQueryParams();
-            $pagina = isset($queryParams['pagina']) ? (int)$queryParams['pagina'] : 1;
-            $porPagina = isset($queryParams['por_pagina']) ? (int)$queryParams['por_pagina'] : 10;
+            $page = isset($queryParams['pagina']) ? (int)$queryParams['pagina'] : 1;
+            $perPage = isset($queryParams['por_pagina']) ? (int)$queryParams['por_pagina'] : 10;
             
             // Validar parâmetros de paginação
-            if ($pagina < 1) $pagina = 1;
-            if ($porPagina < 1 || $porPagina > 100) $porPagina = 10;
+            if ($page < 1) $page = 1;
+            if ($perPage < 1 || $perPage > 100) $perPage = 10;
             
-            $usuarioDAO = new UsuarioDAO();
-            $resultado = [];
+            $userDAO = new UsuarioDAO();
+            $result = [];
             
             // Comportamento diferente baseado no papel do usuário
-            if ($usuario->role_id == 1) { // Administrador - lista gestores e vendedores com informações da empresa
-                $resultado = $usuarioDAO->buscarGestoresEVendedores(null, true, $pagina, $porPagina);
+            if ($user->role_id == 1) { // Administrador - lista gestores e vendedores com informações da empresa
+                $result = $userDAO->buscarGestoresEVendedores(null, true, $page, $perPage);
                 
-                $usuariosFormatados = [];
-                foreach ($resultado['usuarios'] as $usr) {
-                    $usuarioFormatado = [
+                $formattedUsers = [];
+                foreach ($result['usuarios'] as $usr) {
+                    $formattedUser = [
                         'id' => $usr->idUsuarios,
                         'nome' => $usr->nome,
                         'email' => $usr->email,
@@ -153,22 +153,22 @@ class UsuarioController extends Controller {
                         'role_id' => $usr->role_id,
                         'empresa' => isset($usr->empresa) ? $usr->empresa : null
                     ];
-                    $usuariosFormatados[] = $usuarioFormatado;
+                    $formattedUsers[] = $formattedUser;
                 }
                 
                 return [
                     'statusCodeHttp' => 200,
                     'status' => 'sucesso',
-                    'usuarios' => $usuariosFormatados,
-                    'paginacao' => $resultado['paginacao']
+                    'usuarios' => $formattedUsers,
+                    'paginacao' => $result['paginacao']
                 ];
                 
             } else { // Gestor - lista apenas vendedores da sua empresa
-                $resultado = $usuarioDAO->buscarVendedores($usuario->parceiro_id, $pagina, $porPagina);
+                $result = $userDAO->buscarVendedores($user->parceiro_id, $page, $perPage);
                 
-                $usuariosFormatados = [];
-                foreach ($resultado['usuarios'] as $usr) {
-                    $usuarioFormatado = [
+                $formattedUsers = [];
+                foreach ($result['usuarios'] as $usr) {
+                    $formattedUser = [
                         'id' => $usr->idUsuarios,
                         'nome' => $usr->nome,
                         'email' => $usr->email,
@@ -177,20 +177,20 @@ class UsuarioController extends Controller {
                         'status' => $usr->status,
                         'role_id' => $usr->role_id
                     ];
-                    $usuariosFormatados[] = $usuarioFormatado;
+                    $formattedUsers[] = $formattedUser;
                 }
                 
                 return [
                     'statusCodeHttp' => 200,
                     'status' => 'sucesso',
-                    'usuarios' => $usuariosFormatados,
-                    'paginacao' => $resultado['paginacao']
+                    'usuarios' => $formattedUsers,
+                    'paginacao' => $result['paginacao']
                 ];
             }
         }, $request, $response, $args);
     }
     
-    public function cadastrar(Request $request, Response $response, $args) {
+    public function register(Request $request, Response $response, $args) {
         return $this->encapsular_response(function($request, $response, $args) {
             // Verificar se o CNPJ foi fornecido
             if (!isset($args['cnpj'])) {
@@ -212,48 +212,48 @@ class UsuarioController extends Controller {
             }
             
             // Validar parceiro pelo CNPJ
-            $parceiroDAO = new ParceiroDAO();
-            $resultadoValidacao = ParceiroValidator::validarCNPJParceiro($cnpj, $parceiroDAO);
+            $partnerDAO = new ParceiroDAO();
+            $validationResult = ParceiroValidator::validarCNPJParceiro($cnpj, $partnerDAO);
             
-            if (!$resultadoValidacao['valido']) {
+            if (!$validationResult['valido']) {
                 return [
                     'statusCodeHttp' => 400,
-                    'mensagem' => $resultadoValidacao['mensagem']
+                    'mensagem' => $validationResult['mensagem']
                 ];
             }
             
             // Obter parceiro validado
-            $parceiro = $resultadoValidacao['parceiro'];
+            $partner = $validationResult['parceiro'];
             
             // Obter e sanitizar dados do request
-            $dados = $request->getParsedBody();
-            $dados = is_array($dados) ? $dados : [];
-            $dados = InputSanitizer::sanitizeArray($dados);
+            $data = $request->getParsedBody();
+            $data = is_array($data) ? $data : [];
+            $data = InputSanitizer::sanitizeArray($data);
             
             // Validar dados do usuário
-            $erros = InputSanitizer::validateUsuario($dados);
+            $errors = InputSanitizer::validateUsuario($data);
             
             // Se houver erros de validação, retornar erro 400
-            if (!empty($erros)) {
+            if (!empty($errors)) {
                 return [
                     'statusCodeHttp' => 400,
                     'mensagem' => 'Falha na validação dos campos.',
-                    'erros' => $erros
+                    'erros' => $errors
                 ];
             }
             
             // Criar modelo de usuário e hash da senha
-            $usuario = new UsuarioModel($dados);
-            $usuario->password = password_hash($dados['password'], PASSWORD_DEFAULT);
+            $user = new UsuarioModel($data);
+            $user->password = password_hash($data['password'], PASSWORD_DEFAULT);
             
             // Associar o usuário ao parceiro
-            $usuario->parceiros_idparceiros = $parceiro->idparceiros;
+            $user->parceiros_idparceiros = $partner->idparceiros;
             
             // Inserir usuário no banco
-            $usuarioDAO = new UsuarioDAO();
-            $resultado = $usuarioDAO->inserir($usuario);
+            $userDAO = new UsuarioDAO();
+            $result = $userDAO->inserir($user);
             
-            if (!$resultado) {
+            if (!$result) {
                 return [
                     'statusCodeHttp' => 500,
                     'mensagem' => 'Erro ao inserir usuário no banco de dados.'
@@ -269,31 +269,40 @@ class UsuarioController extends Controller {
         }, $request, $response, $args);
     }
     
-    public function signin(Request $request, Response $response, $args) {
+    public function signIn(Request $request, Response $response, $args) {
         return $this->encapsular_response(function($request, $response, $args) {
             // Obter e sanitizar dados do request
-            $dados = $request->getParsedBody();
-            $dados = is_array($dados) ? $dados : [];
-            $dados = InputSanitizer::sanitizeArray($dados);
+            $data = $request->getParsedBody();
+            $data = is_array($data) ? $data : [];
+            $data = InputSanitizer::sanitizeArray($data);
 
-            $validacao = Validator::validate($dados, ['email', 'password']);
+            $validation = Validator::validate($data, ['email', 'password']);
             
-            if (!$validacao['valido']) {
+            if (!$validation['valido']) {
                 return [
                     'statusCodeHttp' => 400,
                     'mensagem' => 'Campos obrigatórios não fornecidos.',
-                    'erros' => $validacao['erros']
+                    'erros' => $validation['erros']
                 ];
             }
             
-            $usuarioDAO = new UsuarioDAO();
-            $usuario = $usuarioDAO->buscarPorEmailESenha($dados['email'], $dados['password']);
+            $userDAO = new UsuarioDAO();
+            $user = $userDAO->buscarPorEmailESenha($data['email'], $data['password']);
             // Verificar se o usuário existe com as credenciais fornecidas
-            if (!$usuario) {
+            if (!$user) {
                 return [
                     'statusCodeHttp' => 401,
                     'mensagem' => 'Credenciais inválidas.'
                 ];
+            }
+            
+            $partnerDAO = new ParceiroDAO();
+            $cnpj = null;
+            if ($user->parceiros_idparceiros) {
+                $partner = $partnerDAO->buscarPorId($user->parceiros_idparceiros);
+                if ($partner) {
+                    $cnpj = $partner->cnpj;
+                }
             }
             
             $settings = $this->container->get('settings');
@@ -305,11 +314,11 @@ class UsuarioController extends Controller {
             $payload = [
                 'iat' => $issuedAt,
                 'exp' => $expirationTime,
-                'sub' => $usuario->idUsuarios,
-                'email' => $usuario->email,
-                'nome' => $usuario->nome,
-                'role_id' => $usuario->role_id,
-                'parceiro_id' => $usuario->parceiros_idparceiros
+                'sub' => $user->idUsuarios,
+                'email' => $user->email,
+                'nome' => $user->nome,
+                'role_id' => $user->role_id,
+                'parceiro_id' => $user->parceiros_idparceiros
             ];
             
             $token = JWT::encode($payload, $jwtSettings['secret'], $jwtSettings['algorithm']);
@@ -321,10 +330,12 @@ class UsuarioController extends Controller {
                 'mensagem' => 'Login realizado com sucesso!',
                 'token' => $token,
                 'usuario' => [
-                    'id' => $usuario->idUsuarios,
-                    'nome' => $usuario->nome,
-                    'email' => $usuario->email,
-                    'role_id' => $usuario->role_id
+                    'id' => $user->idUsuarios,
+                    'nome' => $user->nome,
+                    'email' => $user->email,
+                    'foto_perfil' => $user->foto_perfil,
+                    'cnpj' => $cnpj,
+                    'role_id' => $user->role_id
                 ]
             ];
         }, $request, $response, $args);

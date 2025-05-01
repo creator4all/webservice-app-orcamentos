@@ -19,8 +19,8 @@ class Routes
             $group->get('/hello', HelloController::class . ':hello');
 
             // Rotas públicas de usuário
-            $group->post('/register/{cnpj}', 'App\Controller\UsuarioController:cadastrar');
-            $group->post('/signin', 'App\Controller\UsuarioController:signin');
+            $group->post('/register/{cnpj}', 'App\Controller\UserController:register');
+            $group->post('/signin', 'App\Controller\UserController:signIn');
             
             $group->group('/parceiros', function (Group $group) {
                 $group->get('', 'App\Controller\ParceiroController:listar');
@@ -41,11 +41,11 @@ class Routes
                 $group->post('', 'App\Controller\UserController:create');
                 $group->put('/{id}', 'App\Controller\UserController:update');
                 $group->delete('/{id}', 'App\Controller\UserController:delete');
-                $group->get('/gestores', 'App\Controller\UsuarioController:listarGestores');
+                $group->get('/gestores', 'App\Controller\UserController:listManagers');
             });
             
             // Protected user routes
-            $group->put('/profile', 'App\Controller\UsuarioController:editarPerfil');
+            $group->put('/profile', 'App\Controller\UserController:editProfile');
         });
         
         // Documentation route for Swagger
