@@ -7,6 +7,7 @@ use App\DAO\UsuarioDAO;
 use App\Utils\EmailService;
 use App\Utils\InputSanitizer;
 use App\Utils\Validator;
+use App\Utils\TokenUtils;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
 use \DateTime;
@@ -52,7 +53,7 @@ class PasswordResetController extends Controller {
                 ];
             }
             
-            $token = $this->generateOTP();
+            $token = TokenUtils::generateOTP(self::OTP_LENGTH);
             
             $expiresAt = new DateTime();
             $expiresAt->modify('+' . self::TOKEN_EXPIRATION_MINUTES . ' minutes');
@@ -184,16 +185,5 @@ class PasswordResetController extends Controller {
                 'mensagem' => 'Senha atualizada com sucesso.',
             ];
         }, $request, $response, $args);
-    }
-    
-    /**
-     * Generate a random numeric OTP with specified length
-     */
-    private function generateOTP() {
-        $digits = '';
-        for ($i = 0; $i < self::OTP_LENGTH; $i++) {
-            $digits .= rand(0, 9);
-        }
-        return $digits;
     }
 }

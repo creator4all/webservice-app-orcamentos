@@ -24,7 +24,7 @@ class EmailService {
             $mail = self::getMailer();
             $mail->addAddress($email, $nome);
             $mail->isHTML(true);
-            $mail->Subject = 'Recuperação de Senha - Sistema de Orçamentos';
+            $mail->Subject = 'Recuperação de Senha - Multimídia Parceiros: (B2B)';
             
             $corpo = "
                 <html>
