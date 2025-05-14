@@ -22,6 +22,9 @@ class Routes
             $group->post('/register/{cnpj}', 'App\Controller\UserController:register');
             $group->post('/signin', 'App\Controller\UserController:signIn');
             
+            $group->post('/recover-password', 'App\Controller\PasswordResetController:recoverPassword');
+            $group->post('/reset-password', 'App\Controller\PasswordResetController:resetPassword');
+            
             $group->group('/parceiros', function (Group $group) {
                 $group->get('', 'App\Controller\ParceiroController:listar');
                 $group->post('', 'App\Controller\ParceiroController:cadastrar');

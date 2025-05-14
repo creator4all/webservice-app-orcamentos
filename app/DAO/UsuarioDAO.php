@@ -209,4 +209,33 @@ class UsuarioDAO extends Connection{
             ]
         ];
     }
+    
+    public function buscarPorEmail($email) {
+        $sql = "SELECT * FROM usuarios WHERE email = :email AND excluido = 0 AND status = 1 LIMIT 1";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':email', $email);
+        $stmt->execute();
+        
+        $dados = $stmt->fetch(\PDO::FETCH_ASSOC);
+        
+        if (!$dados) {
+            return null;
+        }
+        
+        $usuario = new UsuarioModel($dados);
+        return $usuario;
+    }
+    
+    public function atualizarSenha(UsuarioModel $usuario) {
+        $sql = "UPDATE usuarios SET 
+                password = :password,
+                updated_at = NOW()
+                WHERE idUsuarios = :id AND excluido = 0";
+                
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':password', $usuario->password);
+        $stmt->bindValue(':id', $usuario->idUsuarios);
+        
+        return $stmt->execute();
+    }
 }
