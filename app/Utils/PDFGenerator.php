@@ -42,14 +42,14 @@ class PDFGenerator {
         </head>
         <body>
             <div class="header">
-                <h1>Sistema de Orçamentos</h1>
+                <h1>Multimídia Parceiro (B2B)</h1>
                 <h2>Carta Senha de Acesso</h2>
             </div>
             
             <div class="content">
                 <p>Prezado(a) <strong>' . htmlspecialchars($dados['nome_gestor']) . '</strong>,</p>
                 
-                <p>Bem-vindo ao Sistema de Orçamentos. Abaixo estão suas credenciais de acesso:</p>
+                <p>Bem-vindo ao Aplicativo Multimídia Parceiro (B2B). Abaixo estão suas credenciais de acesso:</p>
                 
                 <table>
                     <tr>
