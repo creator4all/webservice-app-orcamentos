@@ -122,4 +122,23 @@ class ParceiroDAO extends Connection {
         
         return new ParceiroModel($resultado);
     }
+    
+    /**
+     * Atualiza a flag gestor_cadastrado de um parceiro
+     * @param int $id ID do parceiro
+     * @param bool $status Novo status da flag gestor_cadastrado
+     * @return bool Sucesso ou falha da operação
+     */
+    public function atualizarGestorCadastrado($id, $status = true) {
+        $sql = "UPDATE parceiros SET 
+                gestor_cadastrado = :gestor_cadastrado,
+                updated_at = NOW()
+                WHERE idparceiros = :id";
+                
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':gestor_cadastrado', $status);
+        $stmt->bindValue(':id', $id);
+        
+        return $stmt->execute();
+    }
 }
