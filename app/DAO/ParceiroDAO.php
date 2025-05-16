@@ -10,6 +10,27 @@ class ParceiroDAO extends Connection {
     public function __construct() {
         $this->pdo = Connection::db();
     }
+    
+    /**
+     * Inicia uma transação
+     */
+    public function beginTransaction() {
+        return $this->pdo->beginTransaction();
+    }
+    
+    /**
+     * Confirma uma transação
+     */
+    public function commit() {
+        return $this->pdo->commit();
+    }
+    
+    /**
+     * Cancela uma transação
+     */
+    public function rollBack() {
+        return $this->pdo->rollBack();
+    }
 
     /**
      * Busca um parceiro pelo CNPJ
@@ -37,8 +58,8 @@ class ParceiroDAO extends Connection {
      * @return int|false ID do parceiro inserido ou false em caso de erro
      */
     public function inserir(ParceiroModel $parceiro) {
-        $sql = "INSERT INTO parceiros (cnpj, logomarca, nome_fantasia, razao_social, status, created_at, updated_at) 
-                VALUES (:cnpj, :logomarca, :nome_fantasia, :razao_social, :status, NOW(), NOW())";
+        $sql = "INSERT INTO parceiros (cnpj, logomarca, nome_fantasia, razao_social, status, gestor_cadastrado, url, created_at, updated_at) 
+                VALUES (:cnpj, :logomarca, :nome_fantasia, :razao_social, :status, :gestor_cadastrado, :url, NOW(), NOW())";
         
         $stmt = $this->pdo->prepare($sql);
         $stmt->bindValue(':cnpj', $parceiro->cnpj);
@@ -46,6 +67,8 @@ class ParceiroDAO extends Connection {
         $stmt->bindValue(':nome_fantasia', $parceiro->nome_fantasia);
         $stmt->bindValue(':razao_social', $parceiro->razao_social);
         $stmt->bindValue(':status', $parceiro->status);
+        $stmt->bindValue(':gestor_cadastrado', $parceiro->gestor_cadastrado);
+        $stmt->bindValue(':url', $parceiro->url);
         
         if ($stmt->execute()) {
             return $this->pdo->lastInsertId();
