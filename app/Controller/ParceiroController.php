@@ -149,19 +149,22 @@ class ParceiroController extends Controller {
             $dados = is_array($dados) ? $dados : [];
             $dados = InputSanitizer::sanitizeArray($dados);
             
-            $camposObrigatorios = ['cnpj', 'nome_fantasia', 'razao_social', 'usuario'];
-            if (!$this->validar($camposObrigatorios)) {
+            $camposObrigatorios = ['cnpj', 'razao_social', 'nome_fantasia'];
+            $validacao = Validator::validate($dados, $camposObrigatorios);
+            
+            if (!$validacao['valido']) {
                 return [
                     'statusCodeHttp' => 400,
-                    'mensagem' => 'Campos obrigatórios não fornecidos.'
+                    'mensagem' => 'Campos obrigatórios não fornecidos.',
+                    'erros' => $validacao['erros']
                 ];
             }
             
             $cnpj = CNPJValidator::sanitizar($dados['cnpj']);
-            if (!CNPJValidator::validarFormato($cnpj)) {
+            if (!CNPJValidator::validarFormato($cnpj) || strlen($cnpj) != 14) {
                 return [
                     'statusCodeHttp' => 400,
-                    'mensagem' => 'Formato de CNPJ inválido.'
+                    'mensagem' => 'Formato de CNPJ inválido. O CNPJ deve conter exatamente 14 dígitos.'
                 ];
             }
             
@@ -174,20 +177,38 @@ class ParceiroController extends Controller {
                 ];
             }
             
-            if (!isset($dados['usuario']) || !is_array($dados['usuario'])) {
-                return [
-                    'statusCodeHttp' => 400,
-                    'mensagem' => 'Dados do usuário gestor não fornecidos.'
-                ];
-            }
-            
-            $dadosUsuario = $dados['usuario'];
-            $camposObrigatoriosUsuario = ['nome', 'email', 'telefone', 'password'];
-            foreach ($camposObrigatoriosUsuario as $campo) {
-                if (!isset($dadosUsuario[$campo]) || empty($dadosUsuario[$campo])) {
+            if (isset($dados['site_institucional']) && !empty($dados['site_institucional'])) {
+                if (!InputSanitizer::validateUrl($dados['site_institucional'])) {
                     return [
                         'statusCodeHttp' => 400,
-                        'mensagem' => "Campo obrigatório do usuário não fornecido: {$campo}"
+                        'mensagem' => 'URL do site institucional em formato inválido.'
+                    ];
+                }
+            }
+            
+            $logomarcaPath = null;
+            if (isset($dados['logomarca_url']) && !empty($dados['logomarca_url'])) {
+                \App\Utils\ImageUtils::class;
+                
+                if (!\App\Utils\ImageUtils::validateJpgImage($dados['logomarca_url'])) {
+                    return [
+                        'statusCodeHttp' => 400,
+                        'mensagem' => 'Formato de imagem inválido. Apenas imagens JPG são aceitas.'
+                    ];
+                }
+                
+                $uploadDir = __DIR__ . '/../../public/uploads/logomarcas';
+                $filename = 'logo_' . substr($cnpj, 0, 8) . '_' . uniqid();
+                $logomarcaPath = \App\Utils\ImageUtils::saveBase64Image(
+                    $dados['logomarca_url'], 
+                    $uploadDir, 
+                    $filename
+                );
+                
+                if (!$logomarcaPath) {
+                    return [
+                        'statusCodeHttp' => 500,
+                        'mensagem' => 'Erro ao processar a imagem da logomarca.'
                     ];
                 }
             }
@@ -201,33 +222,24 @@ class ParceiroController extends Controller {
                 $parceiro->nome_fantasia = $dados['nome_fantasia'];
                 $parceiro->razao_social = $dados['razao_social'];
                 $parceiro->status = true; // Status sempre true conforme requisito
+                $parceiro->gestor_cadastrado = false; // Flag indicando que não há gestor cadastrado
                 
-                if (isset($dados['logomarca']) && !empty($dados['logomarca'])) {
-                    $parceiro->logomarca = $dados['logomarca'];
+                if ($logomarcaPath) {
+                    $parceiro->logomarca = $logomarcaPath;
+                }
+                
+                if (isset($dados['site_institucional']) && !empty($dados['site_institucional'])) {
+                    $parceiro->url = $dados['site_institucional'];
                 }
                 
                 $parceiroId = $parceiroDAO->inserir($parceiro);
                 
                 if (!$parceiroId) {
-                    throw new \Exception('Erro ao inserir parceiro no banco de dados.');
-                }
-                
-                $usuario = new UsuarioModel();
-                $usuario->nome = $dadosUsuario['nome'];
-                $usuario->email = $dadosUsuario['email'];
-                $usuario->telefone = $dadosUsuario['telefone'];
-                $usuario->password = password_hash($dadosUsuario['password'], PASSWORD_DEFAULT);
-                $usuario->status = 1;
-                $usuario->excluido = 0;
-                $usuario->parceiros_idparceiros = $parceiroId;
-                $usuario->cargo = 'Gestor';
-                $usuario->role_id = 2; // Assumindo que role 2 é gestor de parceiro
-                
-                $usuarioDAO = new UsuarioDAO();
-                $resultado = $usuarioDAO->inserir($usuario);
-                
-                if (!$resultado) {
-                    throw new \Exception('Erro ao inserir usuário gestor no banco de dados.');
+                    $this->pdo->rollBack();
+                    return [
+                        'statusCodeHttp' => 500,
+                        'mensagem' => 'Erro ao inserir parceiro no banco de dados.'
+                    ];
                 }
                 
                 $this->pdo->commit();
@@ -235,21 +247,23 @@ class ParceiroController extends Controller {
                 return [
                     'statusCodeHttp' => 201,
                     'status' => 'sucesso',
-                    'mensagem' => 'Parceiro e usuário gestor cadastrados com sucesso!',
+                    'mensagem' => 'Parceiro cadastrado com sucesso!',
                     'parceiro' => [
                         'id' => $parceiroId,
-                        'cnpj' => $cnpj,
+                        'cnpj' => CNPJValidator::formatar($cnpj),
                         'nome_fantasia' => $parceiro->nome_fantasia,
-                        'razao_social' => $parceiro->razao_social
+                        'razao_social' => $parceiro->razao_social,
+                        'site_institucional' => $parceiro->url ?? null,
+                        'logomarca' => $parceiro->logomarca ?? null
                     ]
                 ];
                 
-            } catch (\Exception $e) {
+            } catch (\PDOException $e) {
                 $this->pdo->rollBack();
                 
                 return [
                     'statusCodeHttp' => 500,
-                    'mensagem' => 'Erro ao cadastrar parceiro: ' . $e->getMessage()
+                    'mensagem' => 'Erro de banco de dados: ' . $e->getMessage()
                 ];
             }
         }, $request, $response, $args);
