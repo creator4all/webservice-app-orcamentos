@@ -28,7 +28,7 @@ class Routes
             $group->group('/parceiros', function (Group $group) {
                 $group->get('', 'App\Controller\ParceiroController:listar');
                 $group->post('', 'App\Controller\ParceiroController:cadastrar');
-                $group->put('/{id}', 'App\Controller\ParceiroController:editar');
+                $group->put('/{id}', 'App\Controller\ParceiroController:atualizarInformacoesDoParceiro');
             });
             
             // Auth routes

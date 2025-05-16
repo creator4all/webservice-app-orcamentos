@@ -130,6 +130,146 @@ class ParceiroController extends Controller {
     }
     
     /**
+     * Atualiza informações da empresa parceira
+     * Gestores (nível 2) podem editar apenas empresa à qual estão vinculados
+     * Administradores (nível 1) podem editar qualquer empresa parceira
+     * @param Request $request
+     * @param Response $response
+     * @param array $args
+     * @return Response
+     */
+    public function atualizarInformacoesDoParceiro(Request $request, Response $response, $args) {
+        return $this->encapsular_response(function($request, $response, $args) {
+            $usuario = $request->getAttribute('usuario');
+            if (!$usuario || ($usuario->role_id != 1 && $usuario->role_id != 2)) { // Admin (1) ou Gestor (2)
+                return [
+                    'statusCodeHttp' => 403,
+                    'mensagem' => 'Apenas administradores e gestores podem editar informações da empresa.'
+                ];
+            }
+            
+            if (!isset($args['id'])) {
+                return [
+                    'statusCodeHttp' => 400,
+                    'mensagem' => 'ID do parceiro não fornecido.'
+                ];
+            }
+            
+            $parceiroId = $args['id'];
+            
+            if ($usuario->role_id == 2 && $usuario->parceiro_id != $parceiroId) {
+                return [
+                    'statusCodeHttp' => 403,
+                    'mensagem' => 'Gestores só podem editar informações da própria empresa.'
+                ];
+            }
+            
+            $dados = $request->getParsedBody();
+            $dados = is_array($dados) ? $dados : [];
+            $dados = InputSanitizer::sanitizeArray($dados);
+            
+            if (empty($dados)) {
+                return [
+                    'statusCodeHttp' => 400,
+                    'mensagem' => 'Nenhum campo para atualização foi fornecido.'
+                ];
+            }
+            
+            $camposPermitidos = ['razao_social', 'nome_fantasia', 'logomarca_url', 'site_institucional'];
+            $camposInvalidos = array_diff(array_keys($dados), $camposPermitidos);
+            
+            if (!empty($camposInvalidos)) {
+                return [
+                    'statusCodeHttp' => 400,
+                    'mensagem' => 'Campos não permitidos foram enviados: ' . implode(', ', $camposInvalidos)
+                ];
+            }
+            
+            $parceiroDAO = new ParceiroDAO();
+            $parceiro = $parceiroDAO->buscarPorId($parceiroId);
+            
+            if (!$parceiro) {
+                return [
+                    'statusCodeHttp' => 404,
+                    'mensagem' => 'Empresa parceira não encontrada.'
+                ];
+            }
+            
+            $erros = [];
+            
+            if (isset($dados['nome_fantasia']) && empty($dados['nome_fantasia'])) {
+                $erros['nome_fantasia'] = 'Nome fantasia não pode ser vazio.';
+            }
+            
+            if (isset($dados['razao_social']) && empty($dados['razao_social'])) {
+                $erros['razao_social'] = 'Razão social não pode ser vazia.';
+            }
+            
+            if (isset($dados['site_institucional']) && !empty($dados['site_institucional'])) {
+                if (!InputSanitizer::validateUrl($dados['site_institucional'])) {
+                    $erros['site_institucional'] = 'URL do site institucional em formato inválido.';
+                }
+            }
+            
+            $logomarcaPath = null;
+            if (isset($dados['logomarca_url']) && !empty($dados['logomarca_url'])) {
+                if (!ImageUtils::validateJpgImage($dados['logomarca_url'])) {
+                    $erros['logomarca_url'] = 'Formato de imagem inválido. Apenas imagens JPG são aceitas.';
+                } else {
+                    $uploadDir = __DIR__ . '/../../public/uploads/logomarcas';
+                    $filename = 'logo_' . substr($parceiro->cnpj, 0, 8) . '_' . uniqid();
+                    $logomarcaPath = ImageUtils::saveBase64Image(
+                        $dados['logomarca_url'], 
+                        $uploadDir, 
+                        $filename
+                    );
+                    
+                    if (!$logomarcaPath) {
+                        $erros['logomarca_url'] = 'Erro ao processar a imagem da logomarca.';
+                    }
+                }
+            }
+            
+            if (!empty($erros)) {
+                return [
+                    'statusCodeHttp' => 400,
+                    'mensagem' => 'Falha na validação dos campos.',
+                    'erros' => $erros
+                ];
+            }
+            
+            if (isset($dados['nome_fantasia'])) $parceiro->nome_fantasia = $dados['nome_fantasia'];
+            if (isset($dados['razao_social'])) $parceiro->razao_social = $dados['razao_social'];
+            if ($logomarcaPath) $parceiro->logomarca = $logomarcaPath;
+            if (isset($dados['site_institucional'])) $parceiro->url = $dados['site_institucional'];
+            
+            $parceiro->updated_by = $usuario->sub;
+            
+            $resultado = $parceiroDAO->atualizar($parceiro);
+            
+            if (!$resultado) {
+                return [
+                    'statusCodeHttp' => 500,
+                    'mensagem' => 'Erro ao atualizar informações da empresa parceira.'
+                ];
+            }
+            
+            return [
+                'statusCodeHttp' => 200,
+                'status' => 'sucesso',
+                'mensagem' => 'Informações da empresa parceira atualizadas com sucesso.',
+                'parceiro' => [
+                    'partner_id' => $parceiro->idparceiros,
+                    'razao_social' => $parceiro->razao_social,
+                    'nome_fantasia' => $parceiro->nome_fantasia,
+                    'logomarca_url' => $parceiro->logomarca,
+                    'site_institucional' => $parceiro->url
+                ]
+            ];
+        }, $request, $response, $args);
+    }
+    
+    /**
      * Cadastra um novo parceiro e seu usuário gestor
      * Apenas administradores podem cadastrar parceiros
      * @param Request $request
