@@ -5,6 +5,8 @@ use App\Model\ParceiroModel;
 use App\Model\UsuarioModel;
 use App\Utils\InputSanitizer;
 use App\Utils\CNPJValidator;
+use App\Utils\ImageUtils;
+use App\Utils\Validator;
 use App\DAO\ParceiroDAO;
 use App\DAO\UsuarioDAO;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -188,9 +190,7 @@ class ParceiroController extends Controller {
             
             $logomarcaPath = null;
             if (isset($dados['logomarca_url']) && !empty($dados['logomarca_url'])) {
-                \App\Utils\ImageUtils::class;
-                
-                if (!\App\Utils\ImageUtils::validateJpgImage($dados['logomarca_url'])) {
+                if (!ImageUtils::validateJpgImage($dados['logomarca_url'])) {
                     return [
                         'statusCodeHttp' => 400,
                         'mensagem' => 'Formato de imagem inválido. Apenas imagens JPG são aceitas.'
@@ -199,7 +199,7 @@ class ParceiroController extends Controller {
                 
                 $uploadDir = __DIR__ . '/../../public/uploads/logomarcas';
                 $filename = 'logo_' . substr($cnpj, 0, 8) . '_' . uniqid();
-                $logomarcaPath = \App\Utils\ImageUtils::saveBase64Image(
+                $logomarcaPath = ImageUtils::saveBase64Image(
                     $dados['logomarca_url'], 
                     $uploadDir, 
                     $filename
@@ -216,56 +216,46 @@ class ParceiroController extends Controller {
             $this->pdo = \App\DAO\Connection::db();
             $this->pdo->beginTransaction();
             
-            try {
-                $parceiro = new ParceiroModel();
-                $parceiro->cnpj = $cnpj;
-                $parceiro->nome_fantasia = $dados['nome_fantasia'];
-                $parceiro->razao_social = $dados['razao_social'];
-                $parceiro->status = true; // Status sempre true conforme requisito
-                $parceiro->gestor_cadastrado = false; // Flag indicando que não há gestor cadastrado
-                
-                if ($logomarcaPath) {
-                    $parceiro->logomarca = $logomarcaPath;
-                }
-                
-                if (isset($dados['site_institucional']) && !empty($dados['site_institucional'])) {
-                    $parceiro->url = $dados['site_institucional'];
-                }
-                
-                $parceiroId = $parceiroDAO->inserir($parceiro);
-                
-                if (!$parceiroId) {
-                    $this->pdo->rollBack();
-                    return [
-                        'statusCodeHttp' => 500,
-                        'mensagem' => 'Erro ao inserir parceiro no banco de dados.'
-                    ];
-                }
-                
-                $this->pdo->commit();
-                
-                return [
-                    'statusCodeHttp' => 201,
-                    'status' => 'sucesso',
-                    'mensagem' => 'Parceiro cadastrado com sucesso!',
-                    'parceiro' => [
-                        'id' => $parceiroId,
-                        'cnpj' => CNPJValidator::formatar($cnpj),
-                        'nome_fantasia' => $parceiro->nome_fantasia,
-                        'razao_social' => $parceiro->razao_social,
-                        'site_institucional' => $parceiro->url ?? null,
-                        'logomarca' => $parceiro->logomarca ?? null
-                    ]
-                ];
-                
-            } catch (\PDOException $e) {
+            $parceiro = new ParceiroModel();
+            $parceiro->cnpj = $cnpj;
+            $parceiro->nome_fantasia = $dados['nome_fantasia'];
+            $parceiro->razao_social = $dados['razao_social'];
+            $parceiro->status = true; // Status sempre true conforme requisito
+            $parceiro->gestor_cadastrado = false; // Flag indicando que não há gestor cadastrado
+            
+            if ($logomarcaPath) {
+                $parceiro->logomarca = $logomarcaPath;
+            }
+            
+            if (isset($dados['site_institucional']) && !empty($dados['site_institucional'])) {
+                $parceiro->url = $dados['site_institucional'];
+            }
+            
+            $parceiroId = $parceiroDAO->inserir($parceiro);
+            
+            if (!$parceiroId) {
                 $this->pdo->rollBack();
-                
                 return [
                     'statusCodeHttp' => 500,
-                    'mensagem' => 'Erro de banco de dados: ' . $e->getMessage()
+                    'mensagem' => 'Erro ao inserir parceiro no banco de dados.'
                 ];
             }
+            
+            $this->pdo->commit();
+            
+            return [
+                'statusCodeHttp' => 201,
+                'status' => 'sucesso',
+                'mensagem' => 'Parceiro cadastrado com sucesso!',
+                'parceiro' => [
+                    'id' => $parceiroId,
+                    'cnpj' => CNPJValidator::formatar($cnpj),
+                    'nome_fantasia' => $parceiro->nome_fantasia,
+                    'razao_social' => $parceiro->razao_social,
+                    'site_institucional' => $parceiro->url ?? null,
+                    'logomarca' => $parceiro->logomarca ?? null
+                ]
+            ];
         }, $request, $response, $args);
     }
 }
