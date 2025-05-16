@@ -10,6 +10,27 @@ class ParceiroDAO extends Connection {
     public function __construct() {
         $this->pdo = Connection::db();
     }
+    
+    /**
+     * Inicia uma transação
+     */
+    public function beginTransaction() {
+        return $this->pdo->beginTransaction();
+    }
+    
+    /**
+     * Confirma uma transação
+     */
+    public function commit() {
+        return $this->pdo->commit();
+    }
+    
+    /**
+     * Cancela uma transação
+     */
+    public function rollBack() {
+        return $this->pdo->rollBack();
+    }
 
     /**
      * Busca um parceiro pelo CNPJ

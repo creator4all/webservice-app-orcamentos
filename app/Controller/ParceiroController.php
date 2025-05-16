@@ -213,9 +213,6 @@ class ParceiroController extends Controller {
                 }
             }
             
-            $this->pdo = \App\DAO\Connection::db();
-            $this->pdo->beginTransaction();
-            
             $parceiro = new ParceiroModel();
             $parceiro->cnpj = $cnpj;
             $parceiro->nome_fantasia = $dados['nome_fantasia'];
@@ -231,17 +228,19 @@ class ParceiroController extends Controller {
                 $parceiro->url = $dados['site_institucional'];
             }
             
+            $parceiroDAO->beginTransaction();
+            
             $parceiroId = $parceiroDAO->inserir($parceiro);
             
             if (!$parceiroId) {
-                $this->pdo->rollBack();
+                $parceiroDAO->rollBack();
                 return [
                     'statusCodeHttp' => 500,
                     'mensagem' => 'Erro ao inserir parceiro no banco de dados.'
                 ];
             }
             
-            $this->pdo->commit();
+            $parceiroDAO->commit();
             
             return [
                 'statusCodeHttp' => 201,
