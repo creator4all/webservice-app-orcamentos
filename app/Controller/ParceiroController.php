@@ -3,12 +3,14 @@ namespace App\Controller;
 
 use App\Model\ParceiroModel;
 use App\Model\UsuarioModel;
+use App\Model\ParceiroAtualizacaoLogModel;
 use App\Utils\InputSanitizer;
 use App\Utils\CNPJValidator;
 use App\Utils\ImageUtils;
 use App\Utils\Validator;
 use App\DAO\ParceiroDAO;
 use App\DAO\UsuarioDAO;
+use App\DAO\ParceiroAtualizacaoLogDAO;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
 
@@ -238,6 +240,13 @@ class ParceiroController extends Controller {
                 ];
             }
             
+            $valoresOriginais = [
+                'razao_social' => $parceiro->razao_social,
+                'nome_fantasia' => $parceiro->nome_fantasia,
+                'logomarca' => $parceiro->logomarca,
+                'url' => $parceiro->url
+            ];
+            
             if (isset($dados['nome_fantasia'])) $parceiro->nome_fantasia = $dados['nome_fantasia'];
             if (isset($dados['razao_social'])) $parceiro->razao_social = $dados['razao_social'];
             if ($logomarcaPath) $parceiro->logomarca = $logomarcaPath;
@@ -252,6 +261,32 @@ class ParceiroController extends Controller {
                     'statusCodeHttp' => 500,
                     'mensagem' => 'Erro ao atualizar informações da empresa parceira.'
                 ];
+            }
+            
+            $logDAO = new ParceiroAtualizacaoLogDAO();
+            
+            $camposMap = [
+                'nome_fantasia' => 'nome_fantasia',
+                'razao_social' => 'razao_social',
+                'logomarca' => 'logomarca_url',
+                'url' => 'site_institucional'
+            ];
+            
+            foreach ($camposMap as $campo => $campoDisplay) {
+                if (
+                    (isset($dados[$campoDisplay]) && $dados[$campoDisplay] !== '' && $valoresOriginais[$campo] !== $parceiro->$campo) ||
+                    ($campo === 'logomarca' && $logomarcaPath)
+                ) {
+                    $log = new ParceiroAtualizacaoLogModel([
+                        'parceiro_id' => $parceiro->idparceiros,
+                        'usuario_id' => $usuario->sub,
+                        'campo_atualizado' => $campoDisplay,
+                        'valor_anterior' => $valoresOriginais[$campo],
+                        'valor_novo' => $parceiro->$campo
+                    ]);
+                    
+                    $logDAO->registrar($log);
+                }
             }
             
             return [
