@@ -11,6 +11,27 @@ class UsuarioDAO extends Connection{
     public function __construct(){
         $this->pdo = Connection::db();
     }
+    
+    /**
+     * Inicia uma transação
+     */
+    public function beginTransaction() {
+        return $this->pdo->beginTransaction();
+    }
+    
+    /**
+     * Confirma uma transação
+     */
+    public function commit() {
+        return $this->pdo->commit();
+    }
+    
+    /**
+     * Cancela uma transação
+     */
+    public function rollBack() {
+        return $this->pdo->rollBack();
+    }
 
     public function inserir(UsuarioModel $usuario) {
         $sql = "INSERT INTO usuarios (nome, email, telefone, status, excluido, foto_perfil, created_at, updated_at, parceiros_idparceiros, cargos_idcargos, password, role_id) 

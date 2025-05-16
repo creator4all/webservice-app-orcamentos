@@ -45,6 +45,7 @@ class Routes
                 $group->post('', 'App\Controller\UserController:create');
                 $group->put('/{id}', 'App\Controller\UserController:update');
                 $group->delete('/{id}', 'App\Controller\UserController:delete');
+                $group->post('/{partnerId}/manager', 'App\Controller\UserController:criarGerente');
             });
             
             // Protected user routes

@@ -340,4 +340,149 @@ class UserController extends Controller {
             ];
         }, $request, $response, $args);
     }
+    
+    /**
+     * Cadastra um gestor para um parceiro
+     * @param Request $request
+     * @param Response $response
+     * @param array $args
+     * @return Response
+     */
+    public function criarGerente(Request $request, Response $response, $args) {
+        return $this->encapsular_response(function($request, $response, $args) {
+            // Verifica se o usuário é administrador (nível 1)
+            $usuario = $request->getAttribute('usuario');
+            
+            if (!$usuario || $usuario->role_id != 1) {
+                return [
+                    'statusCodeHttp' => 403,
+                    'mensagem' => 'Apenas administradores podem cadastrar gestores de parceiros.'
+                ];
+            }
+            
+            if (!isset($args['partnerId']) || empty($args['partnerId'])) {
+                return [
+                    'statusCodeHttp' => 400,
+                    'mensagem' => 'ID do parceiro não fornecido.'
+                ];
+            }
+            
+            $partnerId = $args['partnerId'];
+            
+            $parceiroDAO = new ParceiroDAO();
+            $parceiro = $parceiroDAO->buscarPorId($partnerId);
+            
+            if (!$parceiro) {
+                return [
+                    'statusCodeHttp' => 404,
+                    'mensagem' => 'Parceiro não encontrado.'
+                ];
+            }
+            
+            if ($parceiro->gestor_cadastrado) {
+                return [
+                    'statusCodeHttp' => 400,
+                    'mensagem' => 'Este parceiro já possui um gestor cadastrado.'
+                ];
+            }
+            
+            $dados = $request->getParsedBody();
+            $dados = is_array($dados) ? $dados : [];
+            $dados = InputSanitizer::sanitizeArray($dados);
+            
+            $camposObrigatorios = ['nome_gestor', 'email', 'telefone', 'cargo', 'senha'];
+            $validacao = Validator::validate($dados, $camposObrigatorios);
+            
+            if (!$validacao['valido']) {
+                return [
+                    'statusCodeHttp' => 400,
+                    'mensagem' => 'Campos obrigatórios não fornecidos.',
+                    'erros' => $validacao['erros']
+                ];
+            }
+            
+            if (!InputSanitizer::validateEmail($dados['email'])) {
+                return [
+                    'statusCodeHttp' => 400,
+                    'mensagem' => 'Formato de email inválido.'
+                ];
+            }
+            
+            // Verificação de unicidade do email
+            $usuarioDAO = new UsuarioDAO();
+            $usuarioExistente = $usuarioDAO->buscarPorEmail($dados['email']);
+            
+            if ($usuarioExistente && !$usuarioExistente->excluido) {
+                return [
+                    'statusCodeHttp' => 400,
+                    'mensagem' => 'Este email já está em uso por outro usuário.'
+                ];
+            }
+            
+            if (!preg_match('/^\(\d{2}\)\s\d{5}-\d{4}$/', $dados['telefone'])) {
+                return [
+                    'statusCodeHttp' => 400,
+                    'mensagem' => 'Formato de telefone inválido. Use o formato (XX) XXXXX-XXXX.'
+                ];
+            }
+            
+            $usuario = new UsuarioModel();
+            $usuario->nome = $dados['nome_gestor'];
+            $usuario->email = $dados['email'];
+            $usuario->telefone = $dados['telefone'];
+            $usuario->password = password_hash($dados['senha'], PASSWORD_DEFAULT);
+            $usuario->status = 1;
+            $usuario->excluido = 0;
+            $usuario->parceiros_idparceiros = $partnerId;
+            $usuario->cargos_idcargos = $dados['cargo'];
+            $usuario->role_id = 2; // Gestor
+            
+            $usuarioDAO->beginTransaction();
+            
+            $usuarioId = $usuarioDAO->inserir($usuario);
+            
+            if (!$usuarioId) {
+                $usuarioDAO->rollBack();
+                return [
+                    'statusCodeHttp' => 500,
+                    'mensagem' => 'Erro ao inserir usuário gestor no banco de dados.'
+                ];
+            }
+            
+            // Atualiza a flag gestor_cadastrado do parceiro
+            $resultado = $parceiroDAO->atualizarGestorCadastrado($partnerId);
+            
+            if (!$resultado) {
+                $usuarioDAO->rollBack();
+                return [
+                    'statusCodeHttp' => 500,
+                    'mensagem' => 'Erro ao atualizar informações do parceiro.'
+                ];
+            }
+            
+            $usuarioDAO->commit();
+            
+            $resposta = [
+                'statusCodeHttp' => 201,
+                'message' => 'Gestor cadastrado e vinculado ao parceiro com sucesso.',
+                'manager_id' => $usuarioId,
+                'partner_id' => $partnerId
+            ];
+            
+            if (isset($dados['generate_password_letter']) && $dados['generate_password_letter']) {
+                $pdfDir = __DIR__ . '/../../public/uploads/cartas';
+                $cartaSenhaPath = PDFGenerator::gerarCartaSenha([
+                    'nome_gestor' => $dados['nome_gestor'],
+                    'email' => $dados['email'],
+                    'senha' => $dados['senha']
+                ], $pdfDir);
+                
+                if ($cartaSenhaPath) {
+                    $resposta['download_carta_senha'] = $cartaSenhaPath;
+                }
+            }
+            
+            return $resposta;
+        }, $request, $response, $args);
+    }
 }
