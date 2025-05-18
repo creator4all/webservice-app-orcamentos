@@ -50,6 +50,7 @@ class Routes
             
             // Protected user routes
             $group->put('/profile', 'App\Controller\UserController:editProfile');
+            $group->put('/usuarios/perfil', 'App\Controller\UserController:editProfile');
         });
         
         // Documentation route for Swagger
