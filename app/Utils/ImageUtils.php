@@ -70,4 +70,59 @@ class ImageUtils {
         
         return substr($imageData, 0, 2) === "\xFF\xD8";
     }
+    
+    /**
+     * Salva um arquivo de imagem enviado via upload e retorna o caminho relativo
+     * @param \Psr\Http\Message\UploadedFileInterface $uploadedFile Arquivo enviado
+     * @param string $directory Diretório onde a imagem será salva
+     * @param string $filename Nome do arquivo (opcional)
+     * @param int $maxSize Tamanho máximo em bytes (padrão 5MB)
+     * @return string|false Caminho do arquivo salvo ou false em caso de erro
+     */
+    public static function saveUploadedImage($uploadedFile, $directory, $filename = null, $maxSize = 5242880) {
+        if (!is_dir($directory)) {
+            if (!mkdir($directory, 0755, true)) {
+                return false;
+            }
+        }
+        
+        if ($uploadedFile->getSize() > $maxSize) {
+            return false;
+        }
+        
+        $mimeType = $uploadedFile->getClientMediaType();
+        if (!in_array($mimeType, ['image/jpeg', 'image/png'])) {
+            return false;
+        }
+        
+        $extension = ($mimeType === 'image/png') ? 'png' : 'jpg';
+        
+        if (empty($filename)) {
+            $filename = uniqid('img_') . '.' . $extension;
+        } else {
+            $filename = basename($filename);
+            if (!str_ends_with(strtolower($filename), ".{$extension}")) {
+                $filename .= ".{$extension}";
+            }
+        }
+        
+        $filePath = $directory . '/' . $filename;
+        
+        try {
+            $uploadedFile->moveTo($filePath);
+            return str_replace($_SERVER['DOCUMENT_ROOT'], '', $filePath);
+        } catch (\Exception $e) {
+            return false;
+        }
+    }
+    
+    /**
+     * Valida se o arquivo enviado é uma imagem JPG ou PNG válida
+     * @param \Psr\Http\Message\UploadedFileInterface $uploadedFile Arquivo enviado
+     * @return bool True se for uma imagem válida (JPG ou PNG)
+     */
+    public static function validateImage($uploadedFile) {
+        $mimeType = $uploadedFile->getClientMediaType();
+        return in_array($mimeType, ['image/jpeg', 'image/png']);
+    }
 }

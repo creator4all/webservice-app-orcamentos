@@ -6,6 +6,7 @@ use App\Utils\InputSanitizer;
 use App\Utils\CNPJValidator;
 use App\Utils\ParceiroValidator;
 use App\Utils\Validator;
+use App\Utils\ImageUtils;
 use App\DAO\UsuarioDAO;
 use App\DAO\ParceiroDAO;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -28,7 +29,7 @@ class UserController extends Controller {
             $data = is_array($data) ? $data : [];
             $data = InputSanitizer::sanitizeArray($data);
             
-            $allowedFields = ['nome', 'email', 'telefone', 'foto_perfil', 'data_nascimento', 'cargo'];
+            $allowedFields = ['nome', 'email', 'telefone', 'data_nascimento', 'cargo'];
             $updateData = [];
             
             foreach ($allowedFields as $field) {
@@ -37,7 +38,14 @@ class UserController extends Controller {
                 }
             }
             
-            if (empty($updateData)) {
+            $uploadedFiles = $request->getUploadedFiles();
+            $fotoUpload = false;
+            
+            if (isset($uploadedFiles['foto_perfil']) && $uploadedFiles['foto_perfil']->getError() === UPLOAD_ERR_OK) {
+                $fotoUpload = true;
+            }
+            
+            if (empty($updateData) && !$fotoUpload) {
                 return [
                     'statusCodeHttp' => 400,
                     'mensagem' => 'Nenhum campo válido para atualização foi fornecido.'
@@ -56,6 +64,36 @@ class UserController extends Controller {
                     $errors['data_nascimento'] = 'Data de nascimento em formato inválido.';
                 } else {
                     $updateData['data_nascimento'] = $formattedDate;
+                }
+            }
+            
+            // Verificar se o e-mail já está em uso por outro usuário
+            if (isset($updateData['email'])) {
+                $userDAO = new UsuarioDAO();
+                $existingUser = $userDAO->buscarPorEmail($updateData['email']);
+                if ($existingUser && $existingUser->idUsuarios != $authenticatedUser->sub) {
+                    $errors['email'] = 'Este e-mail já está em uso por outro usuário.';
+                }
+            }
+            
+            if ($fotoUpload) {
+                $uploadDir = __DIR__ . '/../../public/uploads/perfil';
+                
+                if (!ImageUtils::validateImage($uploadedFiles['foto_perfil'])) {
+                    $errors['foto_perfil'] = 'Formato de imagem inválido. Apenas imagens JPG e PNG são aceitas.';
+                } else {
+                    $filename = 'foto_' . $authenticatedUser->sub . '_' . uniqid();
+                    $uploadedFilePath = ImageUtils::saveUploadedImage(
+                        $uploadedFiles['foto_perfil'],
+                        $uploadDir,
+                        $filename
+                    );
+                    
+                    if (!$uploadedFilePath) {
+                        $errors['foto_perfil'] = 'Erro ao processar a imagem de perfil. Verifique o formato (JPEG, PNG) e tamanho (máx. 5MB).';
+                    } else {
+                        $updateData['foto_perfil'] = $uploadedFilePath;
+                    }
                 }
             }
             
