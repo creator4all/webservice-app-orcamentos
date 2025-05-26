@@ -2,34 +2,12 @@
 namespace App\DAO;
 
 use App\Model\ParceiroModel;
-use App\DAO\Connection;
 
-class ParceiroDAO extends Connection {
+class ParceiroDAO{
     private $pdo;
 
-    public function __construct() {
-        $this->pdo = Connection::db();
-    }
-    
-    /**
-     * Inicia uma transação
-     */
-    public function beginTransaction() {
-        return $this->pdo->beginTransaction();
-    }
-    
-    /**
-     * Confirma uma transação
-     */
-    public function commit() {
-        return $this->pdo->commit();
-    }
-    
-    /**
-     * Cancela uma transação
-     */
-    public function rollBack() {
-        return $this->pdo->rollBack();
+    public function __construct($pdo) {
+        $this->pdo = $pdo;
     }
 
     /**
@@ -37,10 +15,10 @@ class ParceiroDAO extends Connection {
      * @param string $cnpj CNPJ do parceiro
      * @return ParceiroModel|null Retorna o parceiro encontrado ou null se não encontrar
      */
-    public function buscarPorCNPJ($cnpj) {
+    public function buscarPorCNPJ(ParceiroModel $parceiro) {
         $sql = "SELECT * FROM parceiros WHERE cnpj = :cnpj LIMIT 1";
         $stmt = $this->pdo->prepare($sql);
-        $stmt->bindValue(':cnpj', $cnpj);
+        $stmt->bindValue(':cnpj', $parceiro->cnpj);
         $stmt->execute();
         
         $resultado = $stmt->fetch(\PDO::FETCH_ASSOC);
@@ -49,7 +27,7 @@ class ParceiroDAO extends Connection {
             return null;
         }
         
-        return new ParceiroModel($resultado);
+        return $parceiro->preenche_parceiro($resultado);
     }
 
     /**
@@ -99,45 +77,6 @@ class ParceiroDAO extends Connection {
         $stmt->bindValue(':url', $parceiro->url);
         $stmt->bindValue(':updated_by', $parceiro->updated_by);
         $stmt->bindValue(':id', $parceiro->idparceiros);
-        
-        return $stmt->execute();
-    }
-    
-    /**
-     * Busca um parceiro pelo ID
-     * @param int $id ID do parceiro
-     * @return ParceiroModel|null Retorna o parceiro encontrado ou null se não encontrar
-     */
-    public function buscarPorId($id) {
-        $sql = "SELECT * FROM parceiros WHERE idparceiros = :id LIMIT 1";
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->bindValue(':id', $id);
-        $stmt->execute();
-        
-        $resultado = $stmt->fetch(\PDO::FETCH_ASSOC);
-        
-        if (!$resultado) {
-            return null;
-        }
-        
-        return new ParceiroModel($resultado);
-    }
-    
-    /**
-     * Atualiza a flag gestor_cadastrado de um parceiro
-     * @param int $id ID do parceiro
-     * @param bool $status Novo status da flag gestor_cadastrado
-     * @return bool Sucesso ou falha da operação
-     */
-    public function atualizarGestorCadastrado($id, $status = true) {
-        $sql = "UPDATE parceiros SET 
-                gestor_cadastrado = :gestor_cadastrado,
-                updated_at = NOW()
-                WHERE idparceiros = :id";
-                
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->bindValue(':gestor_cadastrado', $status);
-        $stmt->bindValue(':id', $id);
         
         return $stmt->execute();
     }

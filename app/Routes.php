@@ -10,13 +10,8 @@ class Routes
 {
     public static function attachRoutes(App $app): void
     {
-        // Home route
-        $app->get('/', HomeController::class . ':index');
-        
         // API routes
         $app->group('/api', function (Group $group) {
-            // Hello World route
-            $group->get('/hello', HelloController::class . ':hello');
 
             // Rotas públicas de usuário
             $group->post('/register/{cnpj}', 'App\Controller\UserController:register');

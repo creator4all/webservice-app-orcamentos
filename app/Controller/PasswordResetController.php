@@ -13,12 +13,7 @@ use Psr\Http\Message\ResponseInterface as Response;
 use \DateTime;
 
 class PasswordResetController extends Controller {
-    const TOKEN_EXPIRATION_MINUTES = 30;
-    const OTP_LENGTH = 6;
-    
-    /**
-     * Handle the password recovery request
-     */
+
     public function recoverPassword(Request $request, Response $response, $args) {
         return $this->encapsular_response(function($request, $response, $args) {
             $data = $request->getParsedBody();

@@ -17,6 +17,14 @@ class PasswordResetTokenModel {
         }
     }
 
+    public function preenche_token(array $data) {
+        foreach ($data as $key => $value) {
+            if(property_exists($this, $key)) {
+                $this->$key = $value;
+            }
+        }
+    }
+
     public function isExpired(): bool {
         return strtotime($this->expires_at) < time();
     }

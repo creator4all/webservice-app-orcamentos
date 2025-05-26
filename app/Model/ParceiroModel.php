@@ -22,6 +22,14 @@ class ParceiroModel {
         }
     }
 
+    public function preenche_parceiro($data = []){
+        foreach ($data as $key => $value) {
+            if(property_exists($this, $key)) {
+                $this->$key = $value;
+            }
+        }
+    }
+
     /**
      * Verifica se o parceiro está ativo
      * @return bool Retorna true se o parceiro está ativo
@@ -29,4 +37,6 @@ class ParceiroModel {
     public function isAtivo() {
         return $this->status == true;
     }
+
+    
 }

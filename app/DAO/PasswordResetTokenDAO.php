@@ -2,14 +2,12 @@
 namespace App\DAO;
 
 use App\Model\PasswordResetTokenModel;
-use App\DAO\Connection;
-use \DateTime;
 
-class PasswordResetTokenDAO extends Connection {
+class PasswordResetTokenDAO {
     private $pdo;
 
-    public function __construct(){
-        $this->pdo = Connection::db();
+    public function __construct(\PDO $pdo){
+        $this->pdo = $pdo;
     }
 
     public function criar(PasswordResetTokenModel $token) {
@@ -23,7 +21,7 @@ class PasswordResetTokenDAO extends Connection {
         return $stmt->execute();
     }
 
-    public function buscarPorToken($token) {
+    public function buscarPorToken(PasswordResetTokenModel $token) {
         $sql = "SELECT * FROM password_reset_tokens WHERE token = :token ORDER BY created_at DESC LIMIT 1";
         $stmt = $this->pdo->prepare($sql);
         $stmt->bindValue(':token', $token);
@@ -35,7 +33,7 @@ class PasswordResetTokenDAO extends Connection {
             return null;
         }
         
-        return new PasswordResetTokenModel($dados);
+        return $token->preenche_token($dados);
     }
 
     public function marcarComoUsado(PasswordResetTokenModel $token) {

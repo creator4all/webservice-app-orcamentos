@@ -19,9 +19,37 @@ class UsuarioModel {
 
     public function __construct($data = []) {
         foreach ($data as $key => $value) {
+            if(property_exists($this, "password")){
+                $this->setPassword($value);
+            }else if(property_exists($this, $key)) {
+                $this->$key = $value;
+            }
+        }
+    }
+
+    public function preenche_usuario(array $data) {
+        foreach ($data as $key => $value) {
             if(property_exists($this, $key)) {
                 $this->$key = $value;
             }
         }
     }
+
+    public function setPassword($password){
+        $this->password = password_hash($password, PASSWORD_DEFAULT);
+    }
+
+
+    public function isAdmin(): bool {
+        return $this->role_id === 1;
+    }
+    
+    public function isGestor(): bool {
+        return $this->role_id === 2;
+    }
+
+    public function isVendedor(): bool {
+        return $this->role_id === 3;
+    }
+    
 }

@@ -5,32 +5,11 @@ use App\Model\UsuarioModel;
 use App\DAO\Connection;
 
 
-class UsuarioDAO extends Connection{
+class UsuarioDAO{
     private $pdo;
 
-    public function __construct(){
-        $this->pdo = Connection::db();
-    }
-    
-    /**
-     * Inicia uma transação
-     */
-    public function beginTransaction() {
-        return $this->pdo->beginTransaction();
-    }
-    
-    /**
-     * Confirma uma transação
-     */
-    public function commit() {
-        return $this->pdo->commit();
-    }
-    
-    /**
-     * Cancela uma transação
-     */
-    public function rollBack() {
-        return $this->pdo->rollBack();
+    public function __construct(\PDO $pdo){
+        $this->pdo = $pdo;
     }
 
     public function inserir(UsuarioModel $usuario) {
@@ -51,22 +30,23 @@ class UsuarioDAO extends Connection{
         return $stmt->execute();
     }
     
-    public function buscarPorEmailESenha($email, $password) {
+    public function buscarPorEmailESenha(UsuarioModel $usuario) {
         $sql = "SELECT * FROM usuarios WHERE email = :email AND excluido = 0 AND status = 1 LIMIT 1";
         $stmt = $this->pdo->prepare($sql);
-        $stmt->bindValue(':email', $email);
+        $stmt->bindValue(':email', $usuario->email);
         $stmt->execute();
         
         $dados = $stmt->fetch(\PDO::FETCH_ASSOC);
         
         if (!$dados) {
             return null;
-        }else if(!password_verify($password, $dados['password'])) {
+        }else if(!password_verify($usuario->password, $dados['password'])) {
             return null;
         }
         
-        $usuario = new UsuarioModel($dados);
-        return $usuario;
+        $usuario->preenche_usuario($dados);
+        
+        return true;
     }
     
     public function atualizar(UsuarioModel $usuario) {
@@ -92,10 +72,10 @@ class UsuarioDAO extends Connection{
         return $stmt->execute();
     }
     
-    public function buscarPorId($id) {
+    public function buscarPorId(UsuarioModel $usuario) {
         $sql = "SELECT * FROM usuarios WHERE idUsuarios = :id AND excluido = 0 LIMIT 1";
         $stmt = $this->pdo->prepare($sql);
-        $stmt->bindValue(':id', $id);
+        $stmt->bindValue(':id', $usuario->idUsuarios);
         $stmt->execute();
         
         $dados = $stmt->fetch(\PDO::FETCH_ASSOC);
@@ -104,137 +84,14 @@ class UsuarioDAO extends Connection{
             return null;
         }
         
-        $usuario = new UsuarioModel($dados);
-        return $usuario;
+        return $usuario->preenche_usuario($dados);
+        
     }
     
-    /**
-     * Busca gestores e vendedores com paginação
-     * @param int $parceiroId ID do parceiro (opcional)
-     * @param bool $incluirEmpresa Se deve incluir informações da empresa
-     * @param int $pagina Número da página
-     * @param int $porPagina Itens por página
-     * @return array Array com os usuários e informações de paginação
-     */
-    public function buscarGestoresEVendedores($parceiroId = null, $incluirEmpresa = false, $pagina = 1, $porPagina = 10) {
-        $offset = ($pagina - 1) * $porPagina;
-        
-        $sqlSelect = "SELECT u.* ";
-        $sqlFrom = " FROM usuarios u ";
-        $sqlWhere = " WHERE u.excluido = 0 AND (u.role_id = 2 OR u.role_id = 3) "; // role_id 2 = Gerente, 3 = Vendedor
-        $sqlParams = [];
-        
-        if ($parceiroId !== null) {
-            $sqlWhere .= " AND u.parceiros_idparceiros = :parceiro_id ";
-            $sqlParams[':parceiro_id'] = $parceiroId;
-        }
-        
-        if ($incluirEmpresa) {
-            $sqlSelect .= ", p.nome_fantasia, p.razao_social, p.cnpj, p.logomarca, p.url ";
-            $sqlFrom .= " LEFT JOIN parceiros p ON u.parceiros_idparceiros = p.idparceiros ";
-        }
-        
-        $sqlCount = "SELECT COUNT(*) as total" . $sqlFrom . $sqlWhere;
-        $stmtCount = $this->pdo->prepare($sqlCount);
-        foreach ($sqlParams as $param => $value) {
-            $stmtCount->bindValue($param, $value);
-        }
-        $stmtCount->execute();
-        $totalRegistros = $stmtCount->fetch(\PDO::FETCH_ASSOC)['total'];
-        
-        $sql = $sqlSelect . $sqlFrom . $sqlWhere . " ORDER BY u.nome LIMIT :offset, :limit";
-        $stmt = $this->pdo->prepare($sql);
-        foreach ($sqlParams as $param => $value) {
-            $stmt->bindValue($param, $value);
-        }
-        $stmt->bindValue(':offset', $offset, \PDO::PARAM_INT);
-        $stmt->bindValue(':limit', $porPagina, \PDO::PARAM_INT);
-        $stmt->execute();
-        
-        $usuarios = [];
-        while ($dados = $stmt->fetch(\PDO::FETCH_ASSOC)) {
-            $usuario = new UsuarioModel($dados);
-            
-            if ($incluirEmpresa && isset($dados['nome_fantasia'])) {
-                $usuario->empresa = [
-                    'nome_fantasia' => $dados['nome_fantasia'],
-                    'razao_social' => $dados['razao_social'],
-                    'cnpj' => $dados['cnpj'],
-                    'logomarca' => $dados['logomarca'],
-                    'url' => $dados['url']
-                ];
-            }
-            
-            $usuarios[] = $usuario;
-        }
-        
-        $totalPaginas = ceil($totalRegistros / $porPagina);
-        
-        return [
-            'usuarios' => $usuarios,
-            'paginacao' => [
-                'total' => $totalRegistros,
-                'por_pagina' => $porPagina,
-                'pagina_atual' => $pagina,
-                'ultima_pagina' => $totalPaginas
-            ]
-        ];
-    }
-    
-    /**
-     * Busca apenas vendedores de um parceiro com paginação
-     * @param int $parceiroId ID do parceiro
-     * @param int $pagina Número da página
-     * @param int $porPagina Itens por página
-     * @return array Array com os usuários e informações de paginação
-     */
-    public function buscarVendedores($parceiroId, $pagina = 1, $porPagina = 10) {
-        $offset = ($pagina - 1) * $porPagina;
-        
-        $sqlCount = "SELECT COUNT(*) as total FROM usuarios 
-                     WHERE excluido = 0 
-                     AND parceiros_idparceiros = :parceiro_id 
-                     AND role_id = 3"; // role_id 3 = Vendedor
-        
-        $stmtCount = $this->pdo->prepare($sqlCount);
-        $stmtCount->bindValue(':parceiro_id', $parceiroId);
-        $stmtCount->execute();
-        $totalRegistros = $stmtCount->fetch(\PDO::FETCH_ASSOC)['total'];
-        
-        $sql = "SELECT * FROM usuarios 
-                WHERE excluido = 0 
-                AND parceiros_idparceiros = :parceiro_id 
-                AND role_id = 3
-                ORDER BY nome LIMIT :offset, :limit";
-        
-        $stmt = $this->pdo->prepare($sql);
-        $stmt->bindValue(':parceiro_id', $parceiroId);
-        $stmt->bindValue(':offset', $offset, \PDO::PARAM_INT);
-        $stmt->bindValue(':limit', $porPagina, \PDO::PARAM_INT);
-        $stmt->execute();
-        
-        $usuarios = [];
-        while ($dados = $stmt->fetch(\PDO::FETCH_ASSOC)) {
-            $usuarios[] = new UsuarioModel($dados);
-        }
-        
-        $totalPaginas = ceil($totalRegistros / $porPagina);
-        
-        return [
-            'usuarios' => $usuarios,
-            'paginacao' => [
-                'total' => $totalRegistros,
-                'por_pagina' => $porPagina,
-                'pagina_atual' => $pagina,
-                'ultima_pagina' => $totalPaginas
-            ]
-        ];
-    }
-    
-    public function buscarPorEmail($email) {
+    public function buscarPorEmail(UsuarioModel $usuario) {
         $sql = "SELECT * FROM usuarios WHERE email = :email AND excluido = 0 AND status = 1 LIMIT 1";
         $stmt = $this->pdo->prepare($sql);
-        $stmt->bindValue(':email', $email);
+        $stmt->bindValue(':email', $usuario->email);
         $stmt->execute();
         
         $dados = $stmt->fetch(\PDO::FETCH_ASSOC);
@@ -243,8 +100,7 @@ class UsuarioDAO extends Connection{
             return null;
         }
         
-        $usuario = new UsuarioModel($dados);
-        return $usuario;
+        return $usuario->preenche_dados($dados);
     }
     
     public function atualizarSenha(UsuarioModel $usuario) {
@@ -257,6 +113,55 @@ class UsuarioDAO extends Connection{
         $stmt->bindValue(':password', $usuario->password);
         $stmt->bindValue(':id', $usuario->idUsuarios);
         
+        return $stmt->execute();
+    }
+
+    public function buscarPorFuncao(int $role_id, int $id_parceiros): array
+    {
+        $usuariosArray = [];
+
+        $sql = "SELECT * FROM usuarios WHERE role_id = :role_id AND excluido = 0 AND status = 1 AND parceiros_idparceiros = :id_parceiros";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':role_id', $role_id);
+        $stmt->bindValue(':id_parcerios', $role_id);
+        $stmt->execute();
+
+        if($stmt->rowCount() > 0) {
+            $usuarios = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            foreach ($usuarios as $usuario) {
+                $usuarioModel = new UsuarioModel();
+                $usuarioModel->preenche_usuario($usuario);
+                array_push($usuariosArray, $usuario);
+            }
+        }
+
+        return $usuariosArray;
+    }
+
+    public function buscarTodosUsuarios(int $id_parceiros): array
+    {
+        $usuariosArray = [];
+
+        $sql = "SELECT * FROM usuarios WHERE excluido = 0 AND status = 1 AND parceiros_idparceiros = :id_parceiros";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute();
+
+        if($stmt->rowCount() > 0) {
+            $usuarios = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            foreach ($usuarios as $usuario) {
+                $usuarioModel = new UsuarioModel();
+                $usuarioModel->preenche_usuario($usuario);
+                array_push($usuariosArray, $usuario);
+            }
+        }
+
+        return $usuariosArray;
+    }
+
+    public function deletar(UsuarioModel $usuario) {
+        $sql = "UPDATE usuarios SET excluido = 1, updated_at = NOW() WHERE idUsuarios = :id";
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':id', $usuario->idUsuarios);
         return $stmt->execute();
     }
 }
